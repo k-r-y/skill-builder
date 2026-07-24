@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { X, Copy, Download, FileText } from 'lucide-react';
+import { X, Copy, Download, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { downloadSingleSkill } from '../lib/cart';
@@ -24,9 +24,13 @@ export default function SkillPreviewModal({ item, onClose }) {
   const hasPending = item.status === 'pending' || !item.generatedContent;
   const { frontmatter, body } = hasPending ? { frontmatter: null, body: '' } : parseSkillMd(item.generatedContent);
 
+  const [copied, setCopied] = useState(false);
+
   const handleCopy = () => {
     if (item.generatedContent) {
       navigator.clipboard.writeText(item.generatedContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -45,8 +49,17 @@ export default function SkillPreviewModal({ item, onClose }) {
           <div className="flex items-center gap-2">
             {!hasPending && (
               <>
-                <Button variant="outline" size="sm" onClick={handleCopy} className="h-8 gap-1.5 text-xs">
-                  <Copy className="w-3.5 h-3.5" /> Copy
+                <Button variant="outline" size="sm" onClick={handleCopy} className="h-8 gap-1.5 text-xs transition-all">
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
+                      <span className="text-emerald-400 font-medium animate-pulse">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </>
+                  )}
                 </Button>
                 <Button variant="default" size="sm" onClick={() => downloadSingleSkill(item)} className="h-8 gap-1.5 text-xs">
                   <Download className="w-3.5 h-3.5" /> Download

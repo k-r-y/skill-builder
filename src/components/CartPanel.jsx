@@ -58,7 +58,7 @@ function CartItemRow({ item, onPreview, onEdit, onDelete, isRunning }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0 ml-auto">
+      <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end border-t border-border/10 pt-2 sm:border-t-0 sm:pt-0 ml-auto">
         <StatusPill status={item.status} />
         <button
           title="Preview"

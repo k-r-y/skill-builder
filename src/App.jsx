@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
-import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, ShoppingCart, Plus } from 'lucide-react';
+import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, ShoppingCart, Plus, Check } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'skillBuilderState';
 const CART_STORAGE_KEY  = 'skillBuilderCart';
@@ -50,6 +50,7 @@ function App() {
   const [error, setError]               = useState(null);
   const [isQuotaError, setIsQuotaError] = useState(false);
   const [useAI, setUseAI]               = useState(false);
+  const [copied, setCopied]             = useState(false);
 
   // --- Cart state ---
   const [cart, setCart]               = useState(() => loadState(CART_STORAGE_KEY, []));
@@ -156,7 +157,11 @@ function App() {
 
   // ── Copy / Download (single preview) ────────────────────────────────
   const handleCopy = () => {
-    if (state.generatedContent) navigator.clipboard.writeText(state.generatedContent);
+    if (state.generatedContent) {
+      navigator.clipboard.writeText(state.generatedContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDownload = () => {
@@ -232,13 +237,13 @@ function App() {
 
           <BorderGlow
             edgeSensitivity={30}
-            glowColor="221 83 53"
+            glowColor="240 5 75"
             backgroundColor="hsl(var(--card))"
             borderRadius={12}
             glowRadius={40}
             glowIntensity={1.0}
             coneSpread={25}
-            colors={['#3b82f6', '#6366f1', '#a855f7']}
+            colors={['#ffffff', '#cbd5e1', '#64748b']}
             fillOpacity={0.0}
           >
             <Card className="bg-transparent border-0 shadow-none w-full h-full">
@@ -308,13 +313,13 @@ function App() {
           <BorderGlow
             className="flex-1 flex flex-col"
             edgeSensitivity={30}
-            glowColor="221 83 53"
+            glowColor="240 5 75"
             backgroundColor="hsl(var(--card))"
             borderRadius={12}
             glowRadius={40}
             glowIntensity={1.0}
             coneSpread={25}
-            colors={['#3b82f6', '#6366f1', '#a855f7']}
+            colors={['#ffffff', '#cbd5e1', '#64748b']}
             fillOpacity={0.0}
           >
             <Card className="bg-transparent border-0 shadow-none flex-1 flex flex-col w-full h-full">
@@ -384,18 +389,19 @@ function App() {
 
         {/* ── Right Column ─────────────────────────────────────────────── */}
         <BorderGlow
-          className="lg:col-span-8 flex flex-col min-h-[600px] border border-border bg-card/50 shadow-2xl relative backdrop-blur-sm"
+          className="lg:col-span-8 flex flex-col min-h-[600px] shadow-sm backdrop-blur-sm"
           edgeSensitivity={30}
-          glowColor="221 83 53"
+          glowColor="240 5 75"
           backgroundColor="hsl(var(--card) / 0.5)"
           borderRadius={12}
           glowRadius={60}
           glowIntensity={1.2}
           coneSpread={30}
-          colors={['#3b82f6', '#6366f1', '#a855f7']}
+          colors={['#ffffff', '#cbd5e1', '#64748b']}
           fillOpacity={0.0}
         >
-          <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
+          <Card className="dark:bg-black border-0 shadow-none flex-1 flex flex-col w-full h-full">
+            <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/20">
               <TabsList className="bg-transparent gap-2 h-auto p-0 flex-wrap">
                 <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">
@@ -415,8 +421,17 @@ function App() {
               </TabsList>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopy} disabled={!state.generatedContent} className="h-8 gap-2">
-                  <Copy className="w-3.5 h-3.5" /> Copy
+                <Button variant="outline" size="sm" onClick={handleCopy} disabled={!state.generatedContent} className="h-8 gap-2 transition-all">
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
+                      <span className="text-emerald-400 font-medium animate-pulse">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </>
+                  )}
                 </Button>
                 <Button variant="default" size="sm" onClick={handleDownload} disabled={!state.generatedContent} className="h-8 gap-2">
                   <Download className="w-3.5 h-3.5" /> Download
@@ -494,7 +509,8 @@ function App() {
               />
             </TabsContent>
           </Tabs>
-        </BorderGlow>
+        </Card>
+      </BorderGlow>
       </main>
 
       {/* Modals */}

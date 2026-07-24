@@ -165,7 +165,7 @@ pre {
 
 /* Cart item row */
 .cart-item {
-  @apply flex items-center gap-3 px-3 py-3 rounded-lg bg-card border border-border/30 hover:border-border/60 transition-all duration-150 pl-4;
+  @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-3 rounded-lg bg-card border border-border/30 hover:border-border/60 transition-all duration-150 pl-4;
   animation: slide-in-row 200ms ease-out forwards;
 }
 .cart-item-exit {
@@ -222,4 +222,29 @@ pre {
   from { opacity: 0; transform: translateY(16px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── App Micro-interactions & Transitions ────────────────────────── */
+
+/* Buttons active click scaling and hover transitions */
+button,
+.button,
+[role="button"],
+.btn-animate {
+  @apply transition-all duration-150 active:scale-[0.97] hover:brightness-105 active:duration-75;
+}
+
+/* Navigation tabs triggers transitions */
+[role="tab"] {
+  @apply transition-all duration-200 hover:text-foreground active:scale-[0.98];
+}
+
+/* Input fields & textarea focus ring animations */
+input[type="text"],
+input[type="password"],
+textarea,
+select,
+[role="combobox"] {
+  @apply transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary/40 focus:border-primary/50;
+}
+
 
