@@ -7,6 +7,7 @@ import skillsData from './data/skillsMatrix.json';
 import CartPanel from './components/CartPanel';
 import SkillPreviewModal from './components/SkillPreviewModal';
 import EditItemModal from './components/EditItemModal';
+import BorderGlow from './components/BorderGlow';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -357,7 +358,18 @@ function App() {
         </div>
 
         {/* ── Right Column ─────────────────────────────────────────────── */}
-        <div className="lg:col-span-8 flex flex-col min-h-[600px] border border-border bg-card/50 rounded-xl overflow-hidden shadow-2xl relative backdrop-blur-sm">
+        <BorderGlow
+          className="lg:col-span-8 flex flex-col min-h-[600px] border border-border bg-card/50 shadow-2xl relative backdrop-blur-sm"
+          edgeSensitivity={30}
+          glowColor="221 83 53"
+          backgroundColor="hsl(var(--card) / 0.5)"
+          borderRadius={12}
+          glowRadius={60}
+          glowIntensity={1.2}
+          coneSpread={30}
+          colors={['#3b82f6', '#6366f1', '#a855f7']}
+          fillOpacity={0.08}
+        >
           <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/20">
               <TabsList className="bg-transparent gap-2 h-auto p-0 flex-wrap">
@@ -457,7 +469,7 @@ function App() {
               />
             </TabsContent>
           </Tabs>
-        </div>
+        </BorderGlow>
       </main>
 
       {/* Modals */}
