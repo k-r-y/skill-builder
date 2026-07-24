@@ -178,15 +178,15 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center">
       {/* Header */}
-      <header className="w-full max-w-7xl mx-auto py-6 px-4 md:px-8 border-b border-border/40 flex justify-between items-center backdrop-blur-md sticky top-0 z-10 bg-background/80">
+      <header className="w-full max-w-7xl mx-auto py-4 md:py-6 px-4 md:px-8 border-b border-border/40 flex flex-col sm:flex-row gap-4 justify-between items-center backdrop-blur-md sticky top-0 z-10 bg-background/80">
         <div className="flex items-center gap-2">
           <Terminal className="w-6 h-6 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Skill Builder</h1>
           <span className="ml-1 text-[10px] font-mono text-primary/60 border border-primary/20 rounded px-1.5 py-0.5 leading-none">v2</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
           {/* AI / Offline toggle */}
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm shrink-0">
             <span className={`text-xs font-medium transition-colors ${!useAI ? 'text-foreground' : 'text-muted-foreground'}`}>Offline</span>
             <button
               id="ai-mode-toggle"
@@ -200,20 +200,20 @@ function App() {
             <span className={`text-xs font-medium transition-colors ${useAI ? 'text-foreground' : 'text-muted-foreground'}`}>AI</span>
           </div>
 
-          <div className="relative">
+          <div className="relative shrink-0 max-w-[150px] xs:max-w-none">
             <Label htmlFor="apiKey" className="sr-only">Gemini API Key</Label>
             <input
               id="apiKey"
               type="password"
               placeholder="Gemini API Key"
               disabled={!useAI}
-              className={`px-3 py-1.5 rounded-md border border-border bg-input/50 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-opacity ${useAI ? 'opacity-100' : 'opacity-30 cursor-not-allowed'}`}
+              className={`px-3 py-1.5 w-full rounded-md border border-border bg-input/50 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-opacity ${useAI ? 'opacity-100' : 'opacity-30 cursor-not-allowed'}`}
               value={state.apiKey}
               onChange={(e) => handleStateChange('apiKey', e.target.value)}
             />
           </div>
 
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-9 h-9 border border-border">
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-9 h-9 border border-border shrink-0">
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span className="sr-only">Toggle theme</span>
           </Button>
@@ -246,13 +246,51 @@ function App() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Skill Concept</Label>
-                <Select disabled={!state.categoryId} value={state.skillId} onValueChange={(v) => handleStateChange('skillId', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a concept" /></SelectTrigger>
-                  <SelectContent>
-                    {filteredSkills.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label className="flex justify-between items-center">
+                  <span>Skill Concept</span>
+                  {state.skillId && (
+                    <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-mono font-medium">
+                      Selected
+                    </span>
+                  )}
+                </Label>
+                {!state.categoryId ? (
+                  <div className="text-xs text-muted-foreground bg-muted/5 border border-dashed border-border/60 p-4 rounded-md text-center py-6">
+                    Select a category first to view available concepts.
+                  </div>
+                ) : (
+                  <div className="max-h-[240px] overflow-y-auto border border-border/50 rounded-md bg-input/10 p-2 flex flex-col gap-1">
+                    {filteredSkills.map(s => {
+                      const isSelected = state.skillId === s.id;
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => handleStateChange('skillId', s.id)}
+                          className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer border transition-all duration-150 select-none group ${
+                            isSelected
+                              ? 'bg-primary/10 border-primary/50 text-foreground font-semibold'
+                              : 'bg-transparent border-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 w-full">
+                            <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all duration-150 shrink-0 ${
+                              isSelected
+                                ? 'bg-primary border-primary text-primary-foreground'
+                                : 'border-muted-foreground/30 bg-background group-hover:border-muted-foreground/50'
+                            }`}>
+                              {isSelected && (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              )}
+                            </div>
+                            <span className="text-xs leading-tight truncate">{s.name}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {selectedSkill && (
@@ -330,8 +368,8 @@ function App() {
         {/* ── Right Column ─────────────────────────────────────────────── */}
         <div className="lg:col-span-8 flex flex-col min-h-[600px] border border-border bg-card/50 rounded-xl overflow-hidden shadow-2xl relative backdrop-blur-sm">
           <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
-              <TabsList className="bg-transparent gap-2 h-auto p-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/20">
+              <TabsList className="bg-transparent gap-2 h-auto p-0 flex-wrap">
                 <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">
                   Preview
                 </TabsTrigger>
