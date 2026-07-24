@@ -8,8 +8,7 @@ import CartPanel from './components/CartPanel';
 import SkillPreviewModal from './components/SkillPreviewModal';
 import EditItemModal from './components/EditItemModal';
 import BorderGlow from './components/BorderGlow';
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchSelect from './components/SearchSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -182,7 +181,7 @@ function App() {
   const totalCartCount   = cart.length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground flex flex-col items-center">
       {/* Header */}
       <header className="w-full max-w-7xl mx-auto py-4 md:py-6 px-4 md:px-8 border-b border-border/40 flex flex-col sm:flex-row gap-4 justify-between items-center backdrop-blur-md sticky top-0 z-10 bg-background/80">
         <div className="flex items-center gap-2">
@@ -254,12 +253,12 @@ function App() {
               <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>Category</Label>
-                  <Select value={state.categoryId} onValueChange={(v) => handleStateChange('categoryId', v)}>
-                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                    <SelectContent>
-                      {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchSelect
+                    value={state.categoryId}
+                    onValueChange={(v) => handleStateChange('categoryId', v)}
+                    options={categories}
+                    placeholder="Select a category"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -290,9 +289,6 @@ function App() {
                                 : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                             }`}
                           >
-                            <div className={`w-2 h-2 rounded-full shrink-0 transition-colors ${
-                              isSelected ? 'bg-primary' : 'bg-muted-foreground/35'
-                            }`} />
                             <span className="truncate leading-none">{s.name}</span>
                           </button>
                         );
