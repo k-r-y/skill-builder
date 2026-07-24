@@ -65,7 +65,7 @@ const BorderGlow = ({
   coneSpread = 25,
   animated = false,
   colors = ['#3b82f6', '#6366f1', '#a855f7'],
-  fillOpacity = 0.08,
+  fillOpacity = 0.0,
 }) => {
   const cardRef = useRef(null);
 

@@ -230,83 +230,108 @@ function App() {
             <p className="text-muted-foreground text-sm">Select the mechanical foundation and provide custom constraints.</p>
           </div>
 
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Domain & Skill</CardTitle>
-              <CardDescription>Choose the primary software domain and target concept.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>Category</Label>
-                <Select value={state.categoryId} onValueChange={(v) => handleStateChange('categoryId', v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+          <BorderGlow
+            edgeSensitivity={30}
+            glowColor="221 83 53"
+            backgroundColor="hsl(var(--card))"
+            borderRadius={12}
+            glowRadius={40}
+            glowIntensity={1.0}
+            coneSpread={25}
+            colors={['#3b82f6', '#6366f1', '#a855f7']}
+            fillOpacity={0.0}
+          >
+            <Card className="bg-transparent border-0 shadow-none w-full h-full">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Domain & Skill</CardTitle>
+                <CardDescription>Choose the primary software domain and target concept.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label>Category</Label>
+                  <Select value={state.categoryId} onValueChange={(v) => handleStateChange('categoryId', v)}>
+                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                    <SelectContent>
+                      {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <Label className="flex justify-between items-center">
-                  <span>Skill Concept</span>
-                  {state.skillId && (
-                    <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-mono font-medium">
-                      Selected
-                    </span>
+                <div className="flex flex-col gap-2">
+                  <Label className="flex justify-between items-center">
+                    <span>Skill Concept</span>
+                    {state.skillId && (
+                      <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-mono font-medium">
+                        Selected
+                      </span>
+                    )}
+                  </Label>
+                  {!state.categoryId ? (
+                    <div className="text-xs text-muted-foreground bg-muted/5 border border-dashed border-border/60 p-4 rounded-md text-center py-6">
+                      Select a category first to view available concepts.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {filteredSkills.map(s => {
+                        const isSelected = state.skillId === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => handleStateChange('skillId', s.id)}
+                            className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
+                              isSelected
+                                ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
+                                : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <div className={`w-2 h-2 rounded-full shrink-0 transition-colors ${
+                              isSelected ? 'bg-primary' : 'bg-muted-foreground/35'
+                            }`} />
+                            <span className="truncate leading-none">{s.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
-                </Label>
-                {!state.categoryId ? (
-                  <div className="text-xs text-muted-foreground bg-muted/5 border border-dashed border-border/60 p-4 rounded-md text-center py-6">
-                    Select a category first to view available concepts.
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {filteredSkills.map(s => {
-                      const isSelected = state.skillId === s.id;
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => handleStateChange('skillId', s.id)}
-                          className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
-                            isSelected
-                              ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
-                              : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          <div className={`w-2 h-2 rounded-full shrink-0 transition-colors ${
-                            isSelected ? 'bg-primary' : 'bg-muted-foreground/35'
-                          }`} />
-                          <span className="truncate leading-none">{s.name}</span>
-                        </button>
-                      );
-                    })}
+                </div>
+
+                {selectedSkill && (
+                  <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
+                    <span className="font-semibold text-foreground">Trigger:</span> {selectedSkill.trigger || selectedSkill.howItWorks}
                   </div>
                 )}
-              </div>
+              </CardContent>
+            </Card>
+          </BorderGlow>
 
-              {selectedSkill && (
-                <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
-                  <span className="font-semibold text-foreground">Trigger:</span> {selectedSkill.trigger || selectedSkill.howItWorks}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border shadow-sm flex-1">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Custom Constraints</CardTitle>
-              <CardDescription>Project-specific rules, style guides, or edge-cases.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col">
-              <Textarea
-                placeholder="e.g., Must use Zustand with strict TypeScript typing, ignore Redux."
-                className="flex-1 min-h-[120px] resize-none bg-input/20 focus:bg-input/40 transition-colors"
-                value={state.customNotes}
-                onChange={(e) => handleStateChange('customNotes', e.target.value)}
-              />
-            </CardContent>
-          </Card>
+          <BorderGlow
+            className="flex-1 flex flex-col"
+            edgeSensitivity={30}
+            glowColor="221 83 53"
+            backgroundColor="hsl(var(--card))"
+            borderRadius={12}
+            glowRadius={40}
+            glowIntensity={1.0}
+            coneSpread={25}
+            colors={['#3b82f6', '#6366f1', '#a855f7']}
+            fillOpacity={0.0}
+          >
+            <Card className="bg-transparent border-0 shadow-none flex-1 flex flex-col w-full h-full">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Custom Constraints</CardTitle>
+                <CardDescription>Project-specific rules, style guides, or edge-cases.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <Textarea
+                  placeholder="e.g., Must use Zustand with strict TypeScript typing, ignore Redux."
+                  className="flex-1 min-h-[120px] resize-none bg-input/20 focus:bg-input/40 transition-colors"
+                  value={state.customNotes}
+                  onChange={(e) => handleStateChange('customNotes', e.target.value)}
+                />
+              </CardContent>
+            </Card>
+          </BorderGlow>
 
           {/* Error display */}
           {error && (
@@ -368,7 +393,7 @@ function App() {
           glowIntensity={1.2}
           coneSpread={30}
           colors={['#3b82f6', '#6366f1', '#a855f7']}
-          fillOpacity={0.08}
+          fillOpacity={0.0}
         >
           <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/20">
