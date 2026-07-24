@@ -1,7 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { generateSkill } from './lib/gemini';
 import { loadState, saveState } from './lib/storage';
+import { createCartItem, batchGenerate } from './lib/cart';
+import skillsData from './data/skillsMatrix.json';
+import CartPanel from './components/CartPanel';
+import SkillPreviewModal from './components/SkillPreviewModal';
+import EditItemModal from './components/EditItemModal';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
+import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, ShoppingCart, Plus } from 'lucide-react';
+
+const LOCAL_STORAGE_KEY = 'skillBuilderState';
+const CART_STORAGE_KEY  = 'skillBuilderCart';
 
 /** Splits raw SKILL.md into { frontmatter: {name, description}, body: string } */
 function parseSkillMd(raw) {
@@ -15,127 +32,139 @@ function parseSkillMd(raw) {
   });
   return { frontmatter: fm, body: match[2].trim() };
 }
-import skillsData from './data/skillsMatrix.json';
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
-import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon } from 'lucide-react';
-
-const LOCAL_STORAGE_KEY = 'skillBuilderState';
 
 function App() {
   const [categories] = useState(skillsData.categories);
-  const [skills] = useState(skillsData.skills);
-  
+  const [skills]     = useState(skillsData.skills);
+
   const [state, setState] = useState(() => loadState(LOCAL_STORAGE_KEY, {
     categoryId: '',
     skillId: '',
     customNotes: '',
     apiKey: '',
-    generatedContent: ''
+    generatedContent: '',
   }));
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError]               = useState(null);
   const [isQuotaError, setIsQuotaError] = useState(false);
-  const [useAI, setUseAI] = useState(false);
+  const [useAI, setUseAI]               = useState(false);
+
+  // --- Cart state ---
+  const [cart, setCart]               = useState(() => loadState(CART_STORAGE_KEY, []));
+  const [isBatchRunning, setIsBatch]  = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
+  const [editItem, setEditItem]       = useState(null);
 
   const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'dark';
-    }
+    if (typeof window !== 'undefined') return localStorage.getItem('theme') || 'dark';
     return 'dark';
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-  useEffect(() => {
-    saveState(LOCAL_STORAGE_KEY, state);
-  }, [state]);
+  useEffect(() => { saveState(LOCAL_STORAGE_KEY, state); }, [state]);
+  useEffect(() => { saveState(CART_STORAGE_KEY, cart); }, [cart]);
 
   const handleStateChange = (key, value) => {
     setState(prev => {
-      // Reset skillId if category changes
-      if (key === 'categoryId') {
-        return { ...prev, [key]: value, skillId: '' };
-      }
+      if (key === 'categoryId') return { ...prev, [key]: value, skillId: '' };
       return { ...prev, [key]: value };
     });
   };
 
-  const filteredSkills = skills.filter(s => s.categoryId === state.categoryId);
-  const selectedSkill = skills.find(s => s.id === state.skillId);
+  const filteredSkills  = skills.filter(s => s.categoryId === state.categoryId);
+  const selectedSkill   = skills.find(s => s.id === state.skillId);
+  const selectedCategory = categories.find(c => c.id === state.categoryId);
 
+  // ── Single-shot generate (Preview tab) ──────────────────────────────
   const handleGenerate = async () => {
     if (!state.categoryId || !state.skillId) {
-      setError("Please select a category and a skill.");
+      setError('Please select a category and a skill.');
       return;
     }
-
     setError(null);
     setIsQuotaError(false);
     setIsGenerating(true);
 
-    const category = categories.find(c => c.id === state.categoryId)?.name || state.categoryId;
-    const skillName = selectedSkill?.name || 'Custom Skill';
-    const mechanics = selectedSkill?.howItWorks || '';
-    const why = selectedSkill?.whyItMatters || '';
-
+    const category = selectedCategory?.name || state.categoryId;
     try {
       const content = await generateSkill(selectedSkill, category, state.customNotes, state.apiKey, useAI);
       handleStateChange('generatedContent', content);
     } catch (err) {
       let message = err.message || 'An error occurred during generation.';
-      try {
-        const parsed = JSON.parse(message);
-        message = parsed?.error?.message || message;
-      } catch {
-        // not JSON, use as-is
-      }
+      try { const p = JSON.parse(message); message = p?.error?.message || message; } catch {}
       if (message.includes('quota') || message.includes('RESOURCE_EXHAUSTED') || message.includes('billing')) {
         setIsQuotaError(true);
         setError('Free-tier quota reached for today.');
       } else if (message.includes('no longer available') || message.includes('NOT_FOUND')) {
         setError('No compatible Gemini model found for this API key.');
       } else {
-        const firstSentence = message.split(/\. /)[0];
-        setError(firstSentence.length < message.length ? firstSentence + '.' : message);
+        const first = message.split(/\. /)[0];
+        setError(first.length < message.length ? first + '.' : message);
       }
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // ── Add to Cart ─────────────────────────────────────────────────────
+  const handleAddToCart = () => {
+    if (!selectedSkill || !selectedCategory) return;
+    const item = createCartItem(selectedSkill, selectedCategory.name, state.customNotes);
+    setCart(prev => [item, ...prev]);
+  };
+
+  // ── Cart: update item (from edit modal) ─────────────────────────────
+  const handleSaveEdit = useCallback((cartId, newNotes) => {
+    setCart(prev => prev.map(item =>
+      item.cartId === cartId
+        ? { ...item, customNotes: newNotes, status: 'pending', generatedContent: null, errorMessage: null }
+        : item
+    ));
+  }, []);
+
+  // ── Cart: delete ─────────────────────────────────────────────────────
+  const handleDeleteItem = useCallback((cartId) => {
+    setCart(prev => prev.filter(i => i.cartId !== cartId));
+  }, []);
+
+  // ── Cart: clear done ─────────────────────────────────────────────────
+  const handleClearDone = () => {
+    setCart(prev => prev.filter(i => i.status !== 'done'));
+  };
+
+  // ── Cart: batch generate ─────────────────────────────────────────────
+  const handleGenerateAll = async () => {
+    if (isBatchRunning) return;
+    setIsBatch(true);
+
+    const category = selectedCategory?.name || '';
+    await batchGenerate(cart, state.apiKey, useAI, (updatedItem) => {
+      setCart(prev => prev.map(i => i.cartId === updatedItem.cartId ? updatedItem : i));
+    });
+
+    setIsBatch(false);
+  };
+
+  // ── Copy / Download (single preview) ────────────────────────────────
   const handleCopy = () => {
-    if (state.generatedContent) {
-      navigator.clipboard.writeText(state.generatedContent);
-    }
+    if (state.generatedContent) navigator.clipboard.writeText(state.generatedContent);
   };
 
   const handleDownload = () => {
     if (state.generatedContent) {
       const blob = new Blob([state.generatedContent], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
       a.href = url;
-      a.download = `${selectedSkill?.name?.replace(/\\s+/g, '-').toLowerCase() || 'skill'}.md`;
+      a.download = `${selectedSkill?.name?.replace(/\s+/g, '-').toLowerCase() || 'skill'}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -143,12 +172,17 @@ function App() {
     }
   };
 
+  const pendingCartCount = cart.filter(i => i.status === 'pending').length;
+  const totalCartCount   = cart.length;
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center">
+      {/* Header */}
       <header className="w-full max-w-7xl mx-auto py-6 px-4 md:px-8 border-b border-border/40 flex justify-between items-center backdrop-blur-md sticky top-0 z-10 bg-background/80">
         <div className="flex items-center gap-2">
           <Terminal className="w-6 h-6 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Skill Builder</h1>
+          <span className="ml-1 text-[10px] font-mono text-primary/60 border border-primary/20 rounded px-1.5 py-0.5 leading-none">v2</span>
         </div>
         <div className="flex items-center gap-3">
           {/* AI / Offline toggle */}
@@ -159,20 +193,13 @@ function App() {
               role="switch"
               aria-checked={useAI}
               onClick={() => setUseAI(v => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${
-                useAI ? 'bg-primary' : 'bg-muted'
-              }`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${useAI ? 'bg-primary' : 'bg-muted'}`}
             >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${
-                  useAI ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
+              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${useAI ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
             <span className={`text-xs font-medium transition-colors ${useAI ? 'text-foreground' : 'text-muted-foreground'}`}>AI</span>
           </div>
 
-          {/* API Key input — only active in AI mode */}
           <div className="relative">
             <Label htmlFor="apiKey" className="sr-only">Gemini API Key</Label>
             <input
@@ -180,9 +207,7 @@ function App() {
               type="password"
               placeholder="Gemini API Key"
               disabled={!useAI}
-              className={`px-3 py-1.5 rounded-md border border-border bg-input/50 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-opacity ${
-                useAI ? 'opacity-100' : 'opacity-30 cursor-not-allowed'
-              }`}
+              className={`px-3 py-1.5 rounded-md border border-border bg-input/50 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-opacity ${useAI ? 'opacity-100' : 'opacity-30 cursor-not-allowed'}`}
               value={state.apiKey}
               onChange={(e) => handleStateChange('apiKey', e.target.value)}
             />
@@ -196,8 +221,8 @@ function App() {
       </header>
 
       <main className="w-full max-w-7xl mx-auto flex-1 p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column: Control Center */}
+
+        {/* ── Left Column ─────────────────────────────────────────────── */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight mb-2">Configure Context</h2>
@@ -213,34 +238,26 @@ function App() {
               <div className="flex flex-col gap-2">
                 <Label>Category</Label>
                 <Select value={state.categoryId} onValueChange={(v) => handleStateChange('categoryId', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                   <SelectContent>
-                    {categories.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="flex flex-col gap-2">
                 <Label>Skill Concept</Label>
                 <Select disabled={!state.categoryId} value={state.skillId} onValueChange={(v) => handleStateChange('skillId', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a concept" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select a concept" /></SelectTrigger>
                   <SelectContent>
-                    {filteredSkills.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
+                    {filteredSkills.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
               {selectedSkill && (
                 <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
-                  <span className="font-semibold text-foreground">Mechanic:</span> {selectedSkill.howItWorks}
+                  <span className="font-semibold text-foreground">Trigger:</span> {selectedSkill.trigger || selectedSkill.howItWorks}
                 </div>
               )}
             </CardContent>
@@ -249,18 +266,19 @@ function App() {
           <Card className="bg-card border-border shadow-sm flex-1">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">Custom Constraints</CardTitle>
-              <CardDescription>Add project-specific rules, style guides, or edge-cases.</CardDescription>
+              <CardDescription>Project-specific rules, style guides, or edge-cases.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col">
-              <Textarea 
-                placeholder="e.g., Must use Zustand with strict TypeScript typing, ignore Redux. Avoid writing boilerplate reducers."
-                className="flex-1 min-h-[150px] resize-none bg-input/20 focus:bg-input/40 transition-colors"
+              <Textarea
+                placeholder="e.g., Must use Zustand with strict TypeScript typing, ignore Redux."
+                className="flex-1 min-h-[120px] resize-none bg-input/20 focus:bg-input/40 transition-colors"
                 value={state.customNotes}
                 onChange={(e) => handleStateChange('customNotes', e.target.value)}
               />
             </CardContent>
           </Card>
 
+          {/* Error display */}
           {error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 flex flex-col gap-2">
               <div className="flex items-start gap-2">
@@ -278,29 +296,58 @@ function App() {
             </div>
           )}
 
-          <Button 
-            className="w-full h-12 text-base font-semibold group relative overflow-hidden transition-all"
-            size="lg"
-            disabled={isGenerating || !state.categoryId || !state.skillId}
-            onClick={handleGenerate}
-          >
-            {isGenerating ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Synthesizing...</>
-            ) : (
-              <><Sparkles className="w-5 h-5 mr-2 text-primary-foreground group-hover:animate-pulse" /> Generate Skill</>
-            )}
-          </Button>
+          {/* Action buttons */}
+          <div className="flex flex-col gap-2">
+            <Button
+              className="w-full h-12 text-base font-semibold group relative overflow-hidden transition-all"
+              size="lg"
+              disabled={isGenerating || !state.categoryId || !state.skillId}
+              onClick={handleGenerate}
+            >
+              {isGenerating
+                ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Synthesizing...</>
+                : <><Sparkles className="w-5 h-5 mr-2 text-primary-foreground group-hover:animate-pulse" /> Generate Skill</>
+              }
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full h-11 text-sm font-medium gap-2 relative"
+              disabled={!state.categoryId || !state.skillId}
+              onClick={handleAddToCart}
+            >
+              <Plus className="w-4 h-4" />
+              Add to Queue
+              {totalCartCount > 0 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1 cart-badge-pulse">
+                  {totalCartCount}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
-        {/* Right Column: Playground */}
+        {/* ── Right Column ─────────────────────────────────────────────── */}
         <div className="lg:col-span-8 flex flex-col min-h-[600px] border border-border bg-card/50 rounded-xl overflow-hidden shadow-2xl relative backdrop-blur-sm">
           <Tabs defaultValue="preview" className="flex flex-col h-full w-full">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
               <TabsList className="bg-transparent gap-2 h-auto p-0">
-                <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">Preview</TabsTrigger>
-                <TabsTrigger value="code" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">Raw Markdown</TabsTrigger>
+                <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">
+                  Preview
+                </TabsTrigger>
+                <TabsTrigger value="raw" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all">
+                  Raw Markdown
+                </TabsTrigger>
+                <TabsTrigger value="queue" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 rounded-full px-4 py-1.5 text-xs font-medium transition-all relative">
+                  Queue
+                  {totalCartCount > 0 && (
+                    <span className="ml-1.5 min-w-[18px] h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold inline-flex items-center justify-center px-1 cart-badge-pulse">
+                      {totalCartCount}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
-              
+
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handleCopy} disabled={!state.generatedContent} className="h-8 gap-2">
                   <Copy className="w-3.5 h-3.5" /> Copy
@@ -311,13 +358,13 @@ function App() {
               </div>
             </div>
 
+            {/* Preview tab */}
             <TabsContent value="preview" className="flex-1 p-0 m-0 relative">
               <ScrollArea className="h-full w-full absolute inset-0 p-6 md:p-8">
                 {state.generatedContent ? (() => {
                   const { frontmatter, body } = parseSkillMd(state.generatedContent);
                   return (
                     <div className="flex flex-col gap-6">
-                      {/* Frontmatter metadata card */}
                       {frontmatter && (
                         <div className="border border-border/60 bg-muted/20 rounded-lg overflow-hidden text-xs font-mono">
                           <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/40">
@@ -336,13 +383,9 @@ function App() {
                           </div>
                         </div>
                       )}
-
-                      {/* Markdown body */}
                       <div className="markdown-preview max-w-none">
                         <ReactMarkdown>{body}</ReactMarkdown>
                       </div>
-
-                      {/* Usage note */}
                       <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex items-start gap-3">
                         <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                         <div className="text-sm">
@@ -362,18 +405,46 @@ function App() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="code" className="flex-1 p-0 m-0">
-              <Textarea 
+            {/* Raw Markdown tab */}
+            <TabsContent value="raw" className="flex-1 p-0 m-0">
+              <Textarea
                 value={state.generatedContent}
                 onChange={(e) => handleStateChange('generatedContent', e.target.value)}
                 className="h-full w-full border-0 focus-visible:ring-0 rounded-none resize-none p-6 md:p-8 font-mono text-sm leading-relaxed bg-transparent"
                 placeholder="# Your markdown will appear here..."
               />
             </TabsContent>
+
+            {/* Queue tab */}
+            <TabsContent value="queue" className="flex-1 p-0 m-0 relative overflow-hidden">
+              <CartPanel
+                cart={cart}
+                isRunning={isBatchRunning}
+                onPreview={setPreviewItem}
+                onEdit={setEditItem}
+                onDelete={handleDeleteItem}
+                onGenerateAll={handleGenerateAll}
+                onClearDone={handleClearDone}
+              />
+            </TabsContent>
           </Tabs>
         </div>
-
       </main>
+
+      {/* Modals */}
+      {previewItem && (
+        <SkillPreviewModal
+          item={previewItem}
+          onClose={() => setPreviewItem(null)}
+        />
+      )}
+      {editItem && (
+        <EditItemModal
+          item={editItem}
+          onSave={handleSaveEdit}
+          onClose={() => setEditItem(null)}
+        />
+      )}
     </div>
   );
 }
