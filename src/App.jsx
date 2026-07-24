@@ -445,6 +445,12 @@ function App() {
           onClose={() => setEditItem(null)}
         />
       )}
+      {/* Footer */}
+      <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 mt-2 border-t border-border/30 flex items-center justify-center">
+        <p className="text-xs text-muted-foreground/50 tracking-wide">
+          © {new Date().getFullYear()} <span className="font-mono font-medium text-muted-foreground/70">k-r-y</span>. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 }

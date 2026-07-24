@@ -2,12 +2,70 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>temp-app</title>
+
+    <!-- Primary SEO -->
+    <title>Skill Builder — Generate AI Agent Skill Files Instantly</title>
+    <meta name="description" content="Generate production-grade AI agent skill files from 100 curated software engineering concepts. No login required. Offline-first with optional Gemini AI. Export as SKILL.md or batch download as ZIP." />
+    <meta name="keywords" content="AI agent skills, skill builder, SKILL.md generator, agent prompt engineering, cursor rules, AI coding assistant, software engineering skills, prompt engineering tool" />
+    <meta name="author" content="Skill Builder" />
+    <link rel="canonical" href="https://kry-skill-builder.vercel.app/" />
+
+    <!-- Open Graph (Facebook, LinkedIn, Discord, Slack previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kry-skill-builder.vercel.app/" />
+    <meta property="og:title" content="Skill Builder — Generate AI Agent Skill Files Instantly" />
+    <meta property="og:description" content="Turn any software engineering concept into a structured, machine-loadable SKILL.md file. 100 skills across 10 categories. No login. Offline-first." />
+    <meta property="og:image" content="https://kry-skill-builder.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Skill Builder interface showing a skill generation workflow" />
+    <meta property="og:site_name" content="Skill Builder" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://kry-skill-builder.vercel.app/" />
+    <meta name="twitter:title" content="Skill Builder — Generate AI Agent Skill Files Instantly" />
+    <meta name="twitter:description" content="Turn any software engineering concept into a structured, machine-loadable SKILL.md file. 100 skills. No login. Offline-first." />
+    <meta name="twitter:image" content="https://kry-skill-builder.vercel.app/og-image.png" />
+
+    <!-- Theme & Appearance -->
+    <meta name="theme-color" content="#09090B" />
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- JSON-LD Structured Data (rich search result eligibility) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Skill Builder",
+      "url": "https://kry-skill-builder.vercel.app/",
+      "description": "Generate production-grade AI agent skill files from 100 curated software engineering concepts. No login required.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "100 curated software engineering skills",
+        "Offline-first generation with no API key",
+        "Gemini AI integration for dynamic synthesis",
+        "Skill Queue with batch generation",
+        "ZIP batch download",
+        "YAML frontmatter output compatible with agent runtimes"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+
