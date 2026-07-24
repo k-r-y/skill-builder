@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 221.2 83.2% 53.3%; /* Royal Blue 600 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 221.2 83.2% 53.3%; /* Royal Blue 600 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* Custom Glassmorphism scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@layer components {
+  .markdown-preview {
+    @apply text-muted-foreground text-sm leading-relaxed;
+  }
+  .markdown-preview h1, 
+  .markdown-preview h2, 
+  .markdown-preview h3, 
+  .markdown-preview h4 {
+    @apply text-foreground font-semibold tracking-tight mt-8 mb-4 first:mt-0;
+  }
+  .markdown-preview h1 {
+    @apply text-2xl;
+  }
+  .markdown-preview h2 {
+    @apply text-lg;
+  }
+  .markdown-preview p {
+    @apply mb-4 last:mb-0;
+  }
+  .markdown-preview strong {
+    @apply text-foreground font-medium;
+  }
+  .markdown-preview ul, .markdown-preview ol {
+    @apply mb-4 pl-5 space-y-2;
+  }
+  .markdown-preview ul {
+    @apply list-disc;
+  }
+  .markdown-preview ol {
+    @apply list-decimal;
+  }
+  .markdown-preview table {
+    @apply w-full text-left border-collapse border border-border/40 rounded-lg overflow-hidden mb-8 text-sm;
+  }
+  .markdown-preview thead {
+    @apply bg-muted/20 border-b border-border/40;
+  }
+  .markdown-preview th {
+    @apply px-4 py-3 font-medium text-foreground;
+  }
+  .markdown-preview tbody tr {
+    @apply border-b border-border/20 last:border-0 hover:bg-muted/5 transition-colors;
+  }
+  .markdown-preview td {
+    @apply px-4 py-3 align-top;
+  }
+  .markdown-preview code {
+    @apply px-1.5 py-0.5 rounded bg-muted/50 font-mono text-[0.85em] text-foreground;
+  }
+  .markdown-preview pre {
+    @apply bg-[#0D0D12] p-4 rounded-lg overflow-x-auto border border-border/30 mb-6;
+  }
+  .markdown-preview pre code {
+    @apply bg-transparent p-0 text-sm border-0 text-gray-300;
+  }
+  .markdown-preview blockquote {
+    @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground my-4;
+  }
+}
