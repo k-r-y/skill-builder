@@ -259,34 +259,25 @@ function App() {
                     Select a category first to view available concepts.
                   </div>
                 ) : (
-                  <div className="max-h-[240px] overflow-y-auto border border-border/50 rounded-md bg-input/10 p-2 flex flex-col gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {filteredSkills.map(s => {
                       const isSelected = state.skillId === s.id;
                       return (
-                        <div
+                        <button
                           key={s.id}
+                          type="button"
                           onClick={() => handleStateChange('skillId', s.id)}
-                          className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer border transition-all duration-150 select-none group ${
+                          className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
                             isSelected
-                              ? 'bg-primary/10 border-primary/50 text-foreground font-semibold'
-                              : 'bg-transparent border-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground'
+                              ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
+                              : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0 w-full">
-                            <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all duration-150 shrink-0 ${
-                              isSelected
-                                ? 'bg-primary border-primary text-primary-foreground'
-                                : 'border-muted-foreground/30 bg-background group-hover:border-muted-foreground/50'
-                            }`}>
-                              {isSelected && (
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                              )}
-                            </div>
-                            <span className="text-xs leading-tight truncate">{s.name}</span>
-                          </div>
-                        </div>
+                          <div className={`w-2 h-2 rounded-full shrink-0 transition-colors ${
+                            isSelected ? 'bg-primary' : 'bg-muted-foreground/35'
+                          }`} />
+                          <span className="truncate leading-none">{s.name}</span>
+                        </button>
                       );
                     })}
                   </div>
