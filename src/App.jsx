@@ -598,7 +598,7 @@ ${parsed.body}`;
       <main className="w-full max-w-7xl mx-auto flex-1 p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
         {/* ── Left Column ─────────────────────────────────────────────── */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+        <aside className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6" aria-label="Skill configuration options">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight mb-2">Configure Context</h2>
             <p className="text-muted-foreground text-sm">Select the mechanical foundation and provide custom constraints.</p>
@@ -832,7 +832,7 @@ ${parsed.body}`;
               )}
             </Button>
           </div>
-        </div>
+        </aside>
 
         {/* ── Right Column ─────────────────────────────────────────────── */}
         <BorderGlow
