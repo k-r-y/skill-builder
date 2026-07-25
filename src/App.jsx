@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import { generateSkill } from './lib/gemini';
 import { loadState, saveState } from './lib/storage';
 import { createCartItem, batchGenerate } from './lib/cart';
-import skillsData from './data/skillsMatrix.json';
+import { getStoredSkills, saveSkill, seedDefaultSkills } from './lib/skillsManager';
+import { parseSkillMd } from './utils/skillParser';
 import CartPanel from './components/CartPanel';
 import SkillPreviewModal from './components/SkillPreviewModal';
 import EditItemModal from './components/EditItemModal';
@@ -15,27 +16,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
-import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, ShoppingCart, Plus, Check } from 'lucide-react';
+import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, Plus, Check } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'skillBuilderState';
 const CART_STORAGE_KEY  = 'skillBuilderCart';
 
-/** Splits raw SKILL.md into { frontmatter: {name, description}, body: string } */
-function parseSkillMd(raw) {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) return { frontmatter: null, body: raw };
-  const fm = {};
-  match[1].split('\n').forEach(line => {
-    const colon = line.indexOf(':');
-    if (colon === -1) return;
-    fm[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
-  });
-  return { frontmatter: fm, body: match[2].trim() };
-}
-
 function App() {
-  const [categories] = useState(skillsData.categories);
-  const [skills]     = useState(skillsData.skills);
+  const [storedSkills, setStoredSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [state, setState] = useState(() => loadState(LOCAL_STORAGE_KEY, {
     categoryId: '',
@@ -43,6 +31,7 @@ function App() {
     customNotes: '',
     apiKey: '',
     generatedContent: '',
+    customSkillName: '',
   }));
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,6 +51,21 @@ function App() {
     return 'dark';
   });
 
+  // Seeding and loading skills
+  useEffect(() => {
+    let active = true;
+    const init = async () => {
+      await seedDefaultSkills();
+      const loaded = getStoredSkills();
+      if (active) {
+        setStoredSkills(loaded);
+        setLoading(false);
+      }
+    };
+    init();
+    return () => { active = false; };
+  }, []);
+
   useEffect(() => {
     const root = window.document.documentElement;
     theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
@@ -80,8 +84,44 @@ function App() {
     });
   };
 
-  const filteredSkills  = skills.filter(s => s.categoryId === state.categoryId);
-  const selectedSkill   = skills.find(s => s.id === state.skillId);
+  const categories = React.useMemo(() => {
+    const cats = new Map();
+    storedSkills.forEach(s => {
+      const catName = s.metadata?.category || 'General';
+      const catId = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if (!cats.has(catId)) {
+        cats.set(catId, { id: catId, name: catName });
+      }
+    });
+    return Array.from(cats.values());
+  }, [storedSkills]);
+
+  const filteredSkills = React.useMemo(() => {
+    if (!state.categoryId) return [];
+    return storedSkills.filter(s => {
+      const catId = (s.metadata?.category || 'General').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return catId === state.categoryId;
+    });
+  }, [storedSkills, state.categoryId]);
+
+  const selectedSkill = React.useMemo(() => {
+    if (state.skillId === 'custom-skill') {
+      return {
+        id: 'custom-skill',
+        name: state.customSkillName || 'Custom Skill',
+        raw: '',
+        metadata: {
+          name: state.customSkillName || 'Custom Skill',
+          description: state.customNotes || 'Custom skill generated from notes.',
+          category: categories.find(c => c.id === state.categoryId)?.name || 'General',
+          version: '1.0.0'
+        },
+        body: ''
+      };
+    }
+    return storedSkills.find(s => s.id === state.skillId);
+  }, [storedSkills, state.skillId, state.customSkillName, state.customNotes, categories, state.categoryId]);
+
   const selectedCategory = categories.find(c => c.id === state.categoryId);
 
   // ── Single-shot generate (Preview tab) ──────────────────────────────
@@ -90,14 +130,59 @@ function App() {
       setError('Please select a category and a skill.');
       return;
     }
+    if (state.skillId === 'custom-skill' && !state.customSkillName?.trim()) {
+      setError('Please enter a name for your custom skill.');
+      return;
+    }
     setError(null);
     setIsQuotaError(false);
     setIsGenerating(true);
 
-    const category = selectedCategory?.name || state.categoryId;
+    const category = selectedCategory?.name || 'General';
     try {
       const content = await generateSkill(selectedSkill, category, state.customNotes, state.apiKey, useAI);
+      
+      let savedSkill = null;
+      // If we are in AI mode (with a valid API key), parse and save the generated skill to localStorage
+      if (useAI && state.apiKey && state.apiKey.trim()) {
+        try {
+          const parsed = parseSkillMd(content);
+          if (parsed && parsed.metadata && parsed.metadata.name) {
+            // Overwrite or ensure category matches to group correctly
+            parsed.metadata.category = category;
+            
+            // Build raw SKILL.md
+            const slug = parsed.metadata.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const rawContent = `---
+name: ${slug}
+description: "${parsed.metadata.description || ''}"
+category: ${category}
+version: ${parsed.metadata.version || '1.0.0'}
+---
+
+${parsed.body}`;
+
+            savedSkill = saveSkill(rawContent);
+            
+            // Reload skills list in local React state
+            const updated = getStoredSkills();
+            setStoredSkills(updated);
+          }
+        } catch (parseErr) {
+          console.warn('Failed to parse/save generated skill:', parseErr);
+        }
+      }
+
       handleStateChange('generatedContent', content);
+
+      // Auto-select the newly generated skill
+      if (savedSkill) {
+        setState(prev => ({
+          ...prev,
+          skillId: savedSkill.id,
+          customSkillName: '' // clear custom input
+        }));
+      }
     } catch (err) {
       let message = err.message || 'An error occurred during generation.';
       try { const p = JSON.parse(message); message = p?.error?.message || message; } catch {}
@@ -146,7 +231,6 @@ function App() {
     if (isBatchRunning) return;
     setIsBatch(true);
 
-    const category = selectedCategory?.name || '';
     await batchGenerate(cart, state.apiKey, useAI, (updatedItem) => {
       setCart(prev => prev.map(i => i.cartId === updatedItem.cartId ? updatedItem : i));
     });
@@ -177,8 +261,16 @@ function App() {
     }
   };
 
-  const pendingCartCount = cart.filter(i => i.status === 'pending').length;
   const totalCartCount   = cart.length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#09090B] text-foreground">
+        <Loader2 className="w-10 h-10 animate-spin text-[#3B82F6] mb-4" />
+        <p className="text-sm font-mono text-muted-foreground animate-pulse">Initializing Agent Skills Catalog...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground flex flex-col items-center">
@@ -278,6 +370,7 @@ function App() {
                     <div className="flex flex-wrap gap-2">
                       {filteredSkills.map(s => {
                         const isSelected = state.skillId === s.id;
+                        const skillName = s.metadata?.name || s.name;
                         return (
                           <button
                             key={s.id}
@@ -289,17 +382,54 @@ function App() {
                                 : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                             }`}
                           >
-                            <span className="truncate leading-none">{s.name}</span>
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="truncate leading-none">{skillName}</span>
+                              {s.files && s.files.length > 0 && (
+                                <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm font-medium tracking-wide">
+                                  +{s.files.length}
+                                </span>
+                              )}
+                            </div>
                           </button>
                         );
                       })}
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleStateChange('skillId', 'custom-skill');
+                          handleStateChange('customSkillName', '');
+                        }}
+                        className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
+                          state.skillId === 'custom-skill'
+                            ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
+                            : 'bg-muted/30 border-dashed border-border/70 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="truncate leading-none">Custom Skill...</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {state.skillId === 'custom-skill' && (
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <Label htmlFor="customSkillName" className="text-xs text-muted-foreground">Skill Name</Label>
+                      <input
+                        id="customSkillName"
+                        type="text"
+                        placeholder="e.g., Stripe Payments Integration"
+                        className="px-3 py-2 rounded-md border border-border bg-input/40 text-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-colors"
+                        value={state.customSkillName || ''}
+                        onChange={(e) => handleStateChange('customSkillName', e.target.value)}
+                      />
                     </div>
                   )}
                 </div>
 
                 {selectedSkill && (
                   <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
-                    <span className="font-semibold text-foreground">Trigger:</span> {selectedSkill.trigger || selectedSkill.howItWorks}
+                    <span className="font-semibold text-foreground">Trigger:</span> {selectedSkill.metadata?.description || selectedSkill.trigger || selectedSkill.howItWorks}
                   </div>
                 )}
               </CardContent>
@@ -307,7 +437,7 @@ function App() {
           </BorderGlow>
 
           <BorderGlow
-            className="flex-1 flex flex-col"
+            className="flex flex-col shrink-0"
             edgeSensitivity={30}
             glowColor="240 5 75"
             backgroundColor="hsl(var(--card))"
@@ -318,15 +448,15 @@ function App() {
             colors={['#ffffff', '#cbd5e1', '#64748b']}
             fillOpacity={0.0}
           >
-            <Card className="bg-transparent border-0 shadow-none flex-1 flex flex-col w-full h-full">
+            <Card className="bg-transparent border-0 shadow-none flex flex-col w-full">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Custom Constraints</CardTitle>
                 <CardDescription>Project-specific rules, style guides, or edge-cases.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
+              <CardContent className="flex flex-col">
                 <Textarea
                   placeholder="e.g., Must use Zustand with strict TypeScript typing, ignore Redux."
-                  className="flex-1 min-h-[120px] resize-none bg-input/20 focus:bg-input/40 transition-colors"
+                  className="w-full min-h-[120px] max-h-[250px] resize-y bg-input/20 focus:bg-input/40 transition-colors"
                   value={state.customNotes}
                   onChange={(e) => handleStateChange('customNotes', e.target.value)}
                 />
@@ -439,10 +569,10 @@ function App() {
             <TabsContent value="preview" className="flex-1 p-0 m-0 relative">
               <ScrollArea className="h-full w-full absolute inset-0 p-6 md:p-8">
                 {state.generatedContent ? (() => {
-                  const { frontmatter, body } = parseSkillMd(state.generatedContent);
+                  const { metadata, body } = parseSkillMd(state.generatedContent);
                   return (
                     <div className="flex flex-col gap-6">
-                      {frontmatter && (
+                      {metadata && (
                         <div className="border border-border/60 bg-muted/20 rounded-lg overflow-hidden text-xs font-mono">
                           <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/40">
                             <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
@@ -451,12 +581,24 @@ function App() {
                           <div className="p-4 flex flex-col gap-2">
                             <div className="flex gap-3">
                               <span className="text-muted-foreground w-24 shrink-0">name</span>
-                              <span className="text-foreground font-semibold">{frontmatter.name}</span>
+                              <span className="text-foreground font-semibold">{metadata.name}</span>
                             </div>
                             <div className="flex gap-3">
                               <span className="text-muted-foreground w-24 shrink-0">description</span>
-                              <span className="text-foreground leading-relaxed">{frontmatter.description}</span>
+                              <span className="text-foreground leading-relaxed">{metadata.description}</span>
                             </div>
+                            {metadata.category && (
+                              <div className="flex gap-3">
+                                <span className="text-muted-foreground w-24 shrink-0">category</span>
+                                <span className="text-foreground">{metadata.category}</span>
+                              </div>
+                            )}
+                            {metadata.version && (
+                              <div className="flex gap-3">
+                                <span className="text-muted-foreground w-24 shrink-0">version</span>
+                                <span className="text-foreground">{metadata.version}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

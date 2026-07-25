@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -6,6 +7,30 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  useEffect(() => {
+    if (open && containerRef.current) {
+      const updateCoords = () => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          setCoords({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+          });
+        }
+      };
+      updateCoords();
+      window.addEventListener('scroll', updateCoords, true);
+      window.addEventListener('resize', updateCoords);
+      return () => {
+        window.removeEventListener('scroll', updateCoords, true);
+        window.removeEventListener('resize', updateCoords);
+      };
+    }
+  }, [open]);
 
   const selectedOption = options.find(o => o.id === value);
   const filteredOptions = options.filter(o =>
@@ -14,7 +39,11 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
 
   useEffect(() => {
     function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(e.target) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(e.target))
+      ) {
         setOpen(false);
       }
     }
@@ -42,8 +71,12 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
       </button>
 
-      {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 w-full overflow-hidden rounded-lg border border-border/80 bg-card text-card-foreground shadow-xl flex flex-col backdrop-blur-md animate-in fade-in-0 slide-in-from-top-1 duration-100">
+      {open && coords && createPortal(
+        <div 
+          ref={dropdownRef}
+          style={{ top: coords.top + 4, left: coords.left, width: coords.width }}
+          className="absolute z-[9999] max-h-64 overflow-hidden rounded-lg border border-border/80 bg-card text-card-foreground shadow-xl flex flex-col backdrop-blur-md animate-in fade-in-0 slide-in-from-top-1 duration-100"
+        >
           <div className="flex items-center border-b border-border px-3 py-2 gap-2 bg-muted/20 shrink-0">
             <Search className="h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
             <input
@@ -86,7 +119,8 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
               </div>
             )}
           </ScrollArea>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

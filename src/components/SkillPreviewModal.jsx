@@ -4,27 +4,15 @@ import { X, Copy, Download, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { downloadSingleSkill } from '../lib/cart';
-
-/** Splits raw SKILL.md into { frontmatter: {name, description}, body: string } */
-function parseSkillMd(raw) {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) return { frontmatter: null, body: raw };
-  const fm = {};
-  match[1].split('\n').forEach(line => {
-    const colon = line.indexOf(':');
-    if (colon === -1) return;
-    fm[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
-  });
-  return { frontmatter: fm, body: match[2].trim() };
-}
+import { parseSkillMd } from '../utils/skillParser';
 
 export default function SkillPreviewModal({ item, onClose }) {
+  const [copied, setCopied] = useState(false);
+
   if (!item) return null;
 
   const hasPending = item.status === 'pending' || !item.generatedContent;
-  const { frontmatter, body } = hasPending ? { frontmatter: null, body: '' } : parseSkillMd(item.generatedContent);
-
-  const [copied, setCopied] = useState(false);
+  const { metadata, body } = hasPending ? { metadata: null, body: '' } : parseSkillMd(item.generatedContent);
 
   const handleCopy = () => {
     if (item.generatedContent) {
@@ -84,7 +72,7 @@ export default function SkillPreviewModal({ item, onClose }) {
             ) : (
               <div className="flex flex-col gap-6">
                 {/* Frontmatter card */}
-                {frontmatter && (
+                {metadata && (
                   <div className="border border-border/60 bg-muted/20 rounded-lg overflow-hidden text-xs font-mono">
                     <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/40">
                       <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
@@ -93,12 +81,24 @@ export default function SkillPreviewModal({ item, onClose }) {
                     <div className="p-4 flex flex-col gap-2">
                       <div className="flex gap-3">
                         <span className="text-muted-foreground w-24 shrink-0">name</span>
-                        <span className="text-foreground font-semibold">{frontmatter.name}</span>
+                        <span className="text-foreground font-semibold">{metadata.name}</span>
                       </div>
                       <div className="flex gap-3">
                         <span className="text-muted-foreground w-24 shrink-0">description</span>
-                        <span className="text-foreground leading-relaxed">{frontmatter.description}</span>
+                        <span className="text-foreground leading-relaxed">{metadata.description}</span>
                       </div>
+                      {metadata.category && (
+                        <div className="flex gap-3">
+                          <span className="text-muted-foreground w-24 shrink-0">category</span>
+                          <span className="text-foreground">{metadata.category}</span>
+                        </div>
+                      )}
+                      {metadata.version && (
+                        <div className="flex gap-3">
+                          <span className="text-muted-foreground w-24 shrink-0">version</span>
+                          <span className="text-foreground">{metadata.version}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

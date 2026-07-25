@@ -67,7 +67,7 @@ export async function batchGenerate(items, apiKey, useAI, onItemUpdate) {
             generatedContent: content,
             errorMessage: 'API quota reached — generated offline.',
           });
-        } catch (fallbackErr) {
+        } catch {
           onItemUpdate({ ...item, status: 'error', errorMessage: 'Generation failed.' });
         }
       } else {
@@ -84,6 +84,7 @@ export async function batchGenerate(items, apiKey, useAI, onItemUpdate) {
 
 /**
  * Creates a ZIP archive of all 'done' cart items and triggers download.
+ * Each skill is placed in its own sub-directory containing SKILL.md and extra files.
  */
 export async function batchDownload(items) {
   const done = items.filter(i => i.status === 'done' && i.generatedContent);
@@ -101,7 +102,22 @@ export async function batchDownload(items) {
     } else {
       usedNames[slug] = 1;
     }
-    zip.file(`${slug}.md`, item.generatedContent);
+
+    const folder = zip.folder(slug);
+    folder.file('SKILL.md', item.generatedContent);
+
+    const extraFiles = item.skill?.files || [];
+    for (const file of extraFiles) {
+      try {
+        const res = await fetch(file.url);
+        if (res.ok) {
+          const fileBlob = await res.blob();
+          folder.file(file.path, fileBlob);
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch file ${file.path} for batch zip`, err);
+      }
+    }
   }
 
   const blob = await zip.generateAsync({ type: 'blob' });
@@ -110,11 +126,39 @@ export async function batchDownload(items) {
 
 /**
  * Single skill download.
+ * If the skill has additional files, it bundles them into a ZIP archive.
  */
-export function downloadSingleSkill(item) {
+export async function downloadSingleSkill(item) {
   if (!item.generatedContent) return;
-  const blob = new Blob([item.generatedContent], { type: 'text/markdown' });
-  saveAs(blob, `${getSkillSlug(item.skill)}.md`);
+
+  const extraFiles = item.skill?.files || [];
+  if (extraFiles.length === 0) {
+    // Single file download
+    const blob = new Blob([item.generatedContent], { type: 'text/markdown' });
+    saveAs(blob, `${getSkillSlug(item.skill)}.md`);
+    return;
+  }
+
+  // Multi-file zip download
+  const zip = new JSZip();
+  const slug = getSkillSlug(item.skill);
+  
+  zip.file('SKILL.md', item.generatedContent);
+  
+  for (const file of extraFiles) {
+    try {
+      const res = await fetch(file.url);
+      if (res.ok) {
+        const fileBlob = await res.blob();
+        zip.file(file.path, fileBlob);
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch file ${file.path} for zip`, err);
+    }
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  saveAs(blob, `${slug}-package.zip`);
 }
 
 function extractErrorMessage(raw) {
