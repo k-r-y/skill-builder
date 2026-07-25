@@ -1,12 +1,12 @@
 <div align="center">
 
-# ⚡ Skill Builder
+# ⚡ Skill Builder v2
 
-**Generate production-grade AI agent skill files in seconds.**  
-A no-login, offline-first tool for developers who want tailored, structured `.md` skills — not generic templates.
+**Generate & package production-grade AI agent skill files instantly.**  
+A no-login, offline-first tool for developers to generate, customize, and package structured `.md` and multi-file agent skills.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?style=for-the-badge&logo=vercel)](https://your-app.vercel.app)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?style=for-the-badge&logo=vercel)](https://kry-skill-builder.vercel.app/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
@@ -14,14 +14,21 @@ A no-login, offline-first tool for developers who want tailored, structured `.md
 
 ---
 
-## What is this?
+## What is Skill Builder?
 
-Skill Builder is a single-view web app that converts a software engineering concept into a valid, machine-loadable **SKILL.md** file — the kind used by AI agent runtimes (Cursor rules, system prompts, `.agents/skills/` directories).
+**Skill Builder v2** is a single-view web application that generates, customizes, and packages machine-loadable **SKILL.md** files and multi-file skill folders for AI agent runtimes (Claude, Antigravity SDK, Cursor rules, `.agents/skills/` directories).
 
-Select a domain, pick one of **100 curated skills** across **10 engineering categories**, optionally add project-specific constraints, and get a structured skill file with proper YAML frontmatter, ordered steps, and anti-patterns — instantly, with no account required.
+Browse or search across **130 curated skills** organized into **10 domain categories**. Add project-specific constraints, preview markdown output in real time, and export single or queued skills as complete ZIP packages with all supporting scripts and resources preserved.
 
-### v2 adds a Skill Queue
-Build a batch of skills, preview and edit each one individually, then download the entire set as a single ZIP archive.
+---
+
+## What's New in v2 ✨
+
+* **ReactBits Spotlight Search (`⌘K`)**: A macOS Spotlight-style global search modal featuring dark glassmorphism, backdrop blur, keyboard navigation (`⌘K` to open, `Escape` to close), and instant filtering.
+* **Generation Engine Settings Modal**: Switch between **System Default Mode (Offline)** for instant, zero-latency template generation and **AI Generated Mode (Gemini AI)** for dynamic LLM synthesis.
+* **Complete ZIP Package Export**: Single and batch downloads export a root skill directory (e.g. `webapp-testing/`) containing `SKILL.md` and all supporting files (`+N` scripts, references, templates) in their exact relative subpaths.
+* **Responsive Multi-Line Typography**: Word wrapping (`break-words overflow-wrap: anywhere`) ensures skill previews, metadata, and code snippets render without horizontal cut-offs.
+* **Performance & SEO Optimizations**: Built with Vite 8 vendor chunk splitting (`vendor-react`, `vendor-icons`, `vendor-markdown`, `vendor-utils`), font preloading, OpenGraph metadata, and HTML5 semantic landmarks.
 
 ---
 
@@ -29,20 +36,29 @@ Build a batch of skills, preview and edit each one individually, then download t
 
 | Feature | Description |
 |---|---|
-| **100 Skills × 10 Categories** | UI/UX, Frontend, Mobile, Backend, Database, Cloud, QA, Security, DevOps, AI/ML |
-| **Offline-first generation** | Fully structured output with no API key — assembled from a curated JSON schema |
-| **AI mode** | Optional Gemini API integration for dynamic, synthesized content |
-| **Skill Queue (v2)** | Add multiple skills to a queue, manage, preview, edit, and batch generate |
-| **Batch download** | Export all generated skills as a `.zip` archive (one `.md` per skill) |
-| **YAML frontmatter** | Output starts with `---` — valid for agent runtimes, not just formatted docs |
-| **Light & Dark mode** | Persisted theme preference |
-| **No auth, no database** | `localStorage` only — nothing leaves your browser unless you explicitly copy/download |
+| **130 Skills × 10 Categories** | AI Agents, UI/UX, Frontend, Mobile, Backend, Database, Cloud & Infrastructure, QA, Security, Science |
+| **Spotlight Search (`⌘K`)** | ReactBits-style global modal for searching skills across all categories instantly |
+| **Engine Settings** | Choose between **System Default (Offline)** or **AI Generated (Gemini AI)** mode |
+| **ZIP Package Download** | Export skills as `.zip` packages with `<skill-name>/SKILL.md` and supporting file subpaths |
+| **Skill Queue & Batch Generation** | Queue multiple skills, edit custom constraints per item, and batch-export as ZIP |
+| **YAML Frontmatter** | Generates valid `---` frontmatter for agent runtimes and CLI tools |
+| **Responsive Dark & Light Mode** | Styled with glassmorphic cards and dark/light mode toggles |
+| **Client-side & Privacy First** | `localStorage` persistence — API keys and notes stay strictly in your browser |
 
 ---
 
-## Screenshots
+## Skill Categories
 
-> _Add screenshots here after deploying._
+1. **AI Agents & Vibe Coding**: `claude-api`, `google-antigravity-sdk`, `mcp-builder`, `skill-creator`, `workflow-skill-creator`
+2. **UI/UX, Web Design & Visual Identity**: `brand-guidelines`, `theme-factory`, `frontend-design`, `web-design-guidelines`, `canvas-design`, `algorithmic-art`, `slack-gif-creator`, `responsive-layouts`, `web-artifacts-builder`
+3. **Full-Stack Infrastructure & Deployment**: `firebase-auth-basics`, `firebase-firestore`, `firebase-data-connect`, `firebase-crashlytics`, `firebase-app-hosting-basics`, `firebase-hosting-basics`, `firebase-remote-config-basics`, `firebase-security-rules-auditor`, `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-optimize`
+4. **React & Next.js Ecosystem**: `vercel-react-best-practices`, `vercel-composition-patterns`, `vercel-react-view-transitions`, `vercel-react-native-skills`
+5. **Browser Automation & Extensions**: `chrome-devtools`, `a11y-debugging`, `debug-optimize-lcp`, `memory-leak-debugging`, `troubleshooting`, `chrome-extensions`, `modern-web-guidance`
+6. **QA, Testing & Mobile**: `webapp-testing`, `android-cli`, `xcode-project-setup`
+7. **Administration, Comms & Documentation**: `doc-coauthoring`, `internal-comms`, `writing-guidelines`, `docx`, `xlsx`, `pdf`, `pptx`
+8. **Bioinformatics & Scientific Computing**: `alphafold-database-fetch-and-analyze`, `alphagenome-single-variant-analysis`, `chembl-database`, `clinical-trials-database`, `clinvar-database`, `dbsnp-database`, `embl-ebi-ols`, `encode-ccres-database`, `ensembl-database`, `foldseek-structural-search`, `gnomad-database`, `gtex-database`, `human-protein-atlas-database`, `interpro-database`, `jaspar-database`, `ncbi-sequence-fetch`, `openfda-database`, `opentargets-database`, `pdb-database`, `protein-sequence-msa`, `protein-sequence-similarity-search`, `pubchem-database`, `pubmed-database`, `pymol`, `quickgo-database`, `reactome-database`, `string-database`, `ucsc-conservation-and-tfbs`, `unibind-database`, `uniprot-database`
+9. **Literature & Scholarly Search**: `literature-search-arxiv`, `literature-search-biorxiv`, `literature-search-europepmc`, `literature-search-openalex`
+10. **Environment & Package Management**: `uv`, `firebase-basics`
 
 ---
 
@@ -56,8 +72,8 @@ Build a batch of skills, preview and edit each one individually, then download t
 ### Installation
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-username/skill-builder.git
+# Clone the repository
+git clone https://github.com/k-r-y/skill-builder.git
 cd skill-builder
 
 # Install dependencies
@@ -67,35 +83,33 @@ npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173` by default.
+The application runs at `http://localhost:5173` by default.
 
 ---
 
 ## Usage
 
-### Offline mode (default — no API key needed)
+### 1. Offline Mode (System Default)
 
-1. Select a **Category** from the left panel dropdown
-2. Select a **Skill** from the filtered list
-3. Optionally add **Custom Constraints** (project rules, tech stack, edge cases)
-4. Click **Generate Skill** → the Preview tab renders a fully structured SKILL.md
-5. Copy or Download the output
+1. Press **`⌘K`** to search any skill or choose a category from the dropdown.
+2. Select a skill concept.
+3. Optionally enter **Custom Constraints** (tech stack, project rules).
+4. Click **Generate Skill** to preview the rendered `SKILL.md`.
+5. Click **Download** to receive `<skill-name>.zip` containing `<skill-name>/SKILL.md` and any supporting files.
 
-### AI mode
+### 2. AI Mode (Gemini AI Engine)
 
-1. Toggle **Offline → AI** in the top-right header
-2. Paste a **Gemini API Key** into the input that appears
-3. Generate as normal — the LLM synthesizes content dynamically from your schema and notes
+1. Click **Settings** in the top navigation bar.
+2. Select **AI Generated Mode (Gemini AI)**.
+3. Paste a **Google Gemini API Key**.
+4. Save settings and generate dynamically synthesized skills.
 
-> **Note:** The Gemini free tier allows ~20 requests/day. If quota is hit mid-batch, the app automatically falls back to offline generation for remaining skills.
+### 3. Skill Queue & Batch ZIP Export
 
-### Skill Queue (v2)
-
-1. Configure a skill and click **Add to Queue** instead of Generate
-2. Switch to the **Queue tab** in the right panel
-3. Per-item actions: **Preview (👁)**, **Edit constraints (✏)**, **Remove (🗑)**
-4. Click **Generate All** to batch-generate all pending items
-5. Click **Download ZIP** to export all completed skills
+1. Configure skills and click **Add to Queue**.
+2. Open the **Queue** tab in the right panel to preview, edit constraints, or remove items.
+3. Click **Generate All** to synthesize all queued skills.
+4. Click **Download ZIP** to export all completed skills into a single structured ZIP archive.
 
 ---
 
@@ -105,81 +119,61 @@ The app runs at `http://localhost:5173` by default.
 skill-builder/
 ├── src/
 │   ├── components/
-│   │   ├── CartPanel.jsx          # Queue tab — list of cart items
-│   │   ├── EditItemModal.jsx      # Edit constraints for a cart item
-│   │   ├── SkillPreviewModal.jsx  # Full-screen preview modal
-│   │   └── ui/                   # shadcn/ui primitives (Button, Card, etc.)
-│   ├── data/
-│   │   └── skillsMatrix.json     # 100 skills × 10 categories + full schema
+│   │   ├── BorderGlow.jsx         # Micro-interaction glowing card boundary
+│   │   ├── CartPanel.jsx          # Queue panel for batch operations
+│   │   ├── EditItemModal.jsx      # Modal for updating queue item constraints
+│   │   ├── SearchSelect.jsx       # Category search select dropdown
+│   │   ├── SkillPreviewModal.jsx  # Full-screen markdown preview modal
+│   │   └── ui/                   # shadcn/ui primitives (Button, Card, Tabs, etc.)
 │   ├── lib/
-│   │   ├── cart.js               # Cart logic, batch generate, ZIP download
-│   │   ├── gemini.js             # Gemini API client + offline builder
-│   │   └── storage.js            # localStorage helpers
-│   ├── App.jsx                   # Root component and state
-│   └── index.css                 # Global styles, Tailwind layers, animations
-├── context/                      # Project documentation (PRD, schema, etc.)
-├── public/                       # Static assets
-├── index.html
-├── vite.config.js
-└── tailwind.config.js
+│   │   ├── cart.js               # Queue logic, batch generation & ZIP download
+│   │   ├── gemini.js             # Gemini API client & offline skill fallback builder
+│   │   ├── skillsManager.js      # Skill loader, repository scanner & local storage
+│   │   └── storage.js            # State persistence helpers
+│   ├── utils/
+│   │   └── skillParser.js        # Frontmatter & markdown section parser
+│   ├── App.jsx                   # Root application state & Spotlight modal
+│   └── index.css                 # Global CSS design tokens, markdown styles & animations
+├── index.html                    # SEO meta tags, resource preloads & JSON-LD
+├── vite.config.js                # Vite 8 config with vendor chunk splitting
+└── package.json
 ```
 
 ---
 
-## Skill Schema
+## Output Package Format
 
-Each skill in `skillsMatrix.json` follows this shape:
+Downloaded skill ZIP packages follow standard agent skill guidelines:
 
-```json
-{
-  "id": "client-side-routing",
-  "categoryId": "frontend-development",
-  "name": "Client-Side Routing",
-  "trigger": "Use when implementing or modifying in-app navigation in a single-page application.",
-  "howItWorks": "...",
-  "whyItMatters": "...",
-  "directives": ["...", "...", "..."],
-  "antiPatterns": ["...", "...", "..."],
-  "relatedSkills": ["server-side-rendering", "global-state-management"],
-  "scope": {
-    "requiresConfirmation": []
-  }
-}
+```
+webapp-testing.zip
+└── webapp-testing/
+    ├── SKILL.md
+    ├── scripts/
+    │   └── test_runner.py
+    └── references/
+        └── best_practices.md
 ```
 
-The `trigger` field becomes the SKILL.md frontmatter `description`. The `directives` become the ordered **Steps** list. The `scope.requiresConfirmation` array, when non-empty, produces a **"Requires human confirmation before"** section.
-
----
-
-## Output Format
-
-Every generated file is a valid agent skill:
+### `SKILL.md` Structure
 
 ```markdown
 ---
-name: client-side-routing
-description: Use when implementing or modifying in-app navigation in a single-page application.
+name: webapp-testing
+description: Guidance for testing web applications using Playwright.
+category: QA, Testing & Mobile
+version: 1.0.0
 ---
 
-# Client-Side Routing
+# Web App Testing
 
-## When to use this
+## Overview
 ...
 
-## How it works
-...
-
-## Steps
+## Prerequisites
 1. ...
-2. ...
 
-## Never do this
-- ...
-
-## Requires human confirmation before       ← only if scope.requiresConfirmation is non-empty
-- ...
-
-## Project-specific constraints             ← only if the user typed custom notes
+## Key Concepts
 - ...
 ```
 
@@ -189,57 +183,12 @@ description: Use when implementing or modifying in-app navigation in a single-pa
 
 | Layer | Technology |
 |---|---|
-| Framework | React 18 + Vite 8 |
-| Language | JavaScript (no TypeScript) |
-| Styling | Tailwind CSS + shadcn/ui |
-| AI | `@google/genai` (Gemini 2.x) |
-| Archive | JSZip + file-saver |
-| Icons | Lucide React |
-| Persistence | `localStorage` |
-
----
-
-## Deploying to Vercel
-
-```bash
-# Push to GitHub first
-git add .
-git commit -m "feat: ready for deploy"
-git push origin main
-```
-
-Then in [vercel.com](https://vercel.com):
-1. **New Project** → Import from GitHub
-2. Framework preset will auto-detect **Vite**
-3. No environment variables needed (API keys are entered by users at runtime)
-4. Click **Deploy**
-
-Build settings (auto-detected, but confirming):
-
-| Setting | Value |
-|---|---|
-| Build command | `npm run build` |
-| Output directory | `dist` |
-| Install command | `npm install` |
-
----
-
-## Development Notes
-
-- **No TypeScript** — by design. All files are `.js` / `.jsx`.
-- **No Redux** — state is managed with `useState` + `localStorage`.
-- **No auth** — the app is fully client-side with no backend.
-- API keys entered by the user are stored only in `localStorage` and never sent anywhere except directly to the Gemini API from the browser.
-
----
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit your changes (`git commit -m 'feat: add something'`)
-4. Push to the branch (`git push origin feat/your-feature`)
-5. Open a Pull Request
+| **Framework** | React 19 + Vite 8 |
+| **Styling** | Tailwind CSS + shadcn/ui + Lucide Icons |
+| **AI Integration** | `@google/genai` (Google Gemini API) |
+| **Archive Packaging** | JSZip + file-saver |
+| **Markdown Rendering** | react-markdown |
+| **Build Optimizer** | Rolldown / Rollup vendor chunk splitting |
 
 ---
 
