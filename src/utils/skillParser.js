@@ -92,9 +92,11 @@ export function parseSkillMd(raw) {
   }
 
   // Clean name from frontmatter or fall back to H1 header in body if name is missing
-  if (!metadata.name) {
+  if (!metadata.name || metadata.name === 'Unnamed Skill') {
     const h1Match = body.match(/^#\s+(.+)$/m);
-    metadata.name = h1Match ? h1Match[1].trim() : 'Unnamed Skill';
+    if (h1Match) {
+      metadata.name = h1Match[1].trim();
+    }
   }
 
   return { metadata, body };

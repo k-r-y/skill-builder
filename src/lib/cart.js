@@ -109,10 +109,14 @@ export async function batchDownload(items) {
     const extraFiles = item.skill?.files || [];
     for (const file of extraFiles) {
       try {
-        const res = await fetch(file.url);
-        if (res.ok) {
-          const fileBlob = await res.blob();
-          folder.file(file.path, fileBlob);
+        if (file.content) {
+          folder.file(file.path, file.content);
+        } else if (file.url) {
+          const res = await fetch(file.url);
+          if (res.ok) {
+            const fileBlob = await res.blob();
+            folder.file(file.path, fileBlob);
+          }
         }
       } catch (err) {
         console.warn(`Failed to fetch file ${file.path} for batch zip`, err);
@@ -121,44 +125,49 @@ export async function batchDownload(items) {
   }
 
   const blob = await zip.generateAsync({ type: 'blob' });
-  saveAs(blob, `skill-builder-export-${Date.now()}.zip`);
+  saveAs(blob, `skills-bundle-${Date.now()}.zip`);
 }
 
 /**
  * Single skill download.
- * If the skill has additional files, it bundles them into a ZIP archive.
+ * Creates a ZIP archive where:
+ * - Root directory is named after the skill (e.g., 'webapp-testing/')
+ * - Main markdown file is named 'SKILL.md' inside that directory
+ * - Supporting files maintain their exact subpaths (e.g., 'scripts/runner.py')
  */
-export async function downloadSingleSkill(item) {
-  if (!item.generatedContent) return;
+export async function downloadSingleSkill(skillObj, generatedContent) {
+  if (!generatedContent && !skillObj?.raw) return;
 
-  const extraFiles = item.skill?.files || [];
-  if (extraFiles.length === 0) {
-    // Single file download
-    const blob = new Blob([item.generatedContent], { type: 'text/markdown' });
-    saveAs(blob, `${getSkillSlug(item.skill)}.md`);
-    return;
-  }
+  const rawName = skillObj?.metadata?.name || skillObj?.name || skillObj?.id || 'custom-skill';
+  const folderName = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'skill';
+  const contentToSave = generatedContent || skillObj?.raw || '';
 
-  // Multi-file zip download
   const zip = new JSZip();
-  const slug = getSkillSlug(item.skill);
-  
-  zip.file('SKILL.md', item.generatedContent);
-  
+  const folder = zip.folder(folderName);
+
+  // Main markdown file is SKILL.md
+  folder.file('SKILL.md', contentToSave);
+
+  // Add supporting files if present
+  const extraFiles = skillObj?.files || [];
   for (const file of extraFiles) {
     try {
-      const res = await fetch(file.url);
-      if (res.ok) {
-        const fileBlob = await res.blob();
-        zip.file(file.path, fileBlob);
+      if (file.content) {
+        folder.file(file.path, file.content);
+      } else if (file.url) {
+        const res = await fetch(file.url);
+        if (res.ok) {
+          const fileBlob = await res.blob();
+          folder.file(file.path, fileBlob);
+        }
       }
     } catch (err) {
-      console.warn(`Failed to fetch file ${file.path} for zip`, err);
+      console.warn(`Failed to fetch file ${file.path} for single zip`, err);
     }
   }
 
   const blob = await zip.generateAsync({ type: 'blob' });
-  saveAs(blob, `${slug}-package.zip`);
+  saveAs(blob, `${folderName}.zip`);
 }
 
 function extractErrorMessage(raw) {

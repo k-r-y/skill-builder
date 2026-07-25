@@ -16,8 +16,8 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           setCoords({
-            top: rect.bottom + window.scrollY,
-            left: rect.left + window.scrollX,
+            top: rect.bottom,
+            left: rect.left,
             width: rect.width,
           });
         }
@@ -47,8 +47,17 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
         setOpen(false);
       }
     }
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Reset search when dropdown closes
@@ -62,20 +71,31 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
     <div ref={containerRef} className="relative w-full">
       <button
         type="button"
+        role="combobox"
+        aria-expanded={open}
+        aria-label={placeholder || "Select option"}
         onClick={() => setOpen(!open)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background/50 hover:bg-background/80 px-3 py-2 text-sm transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 text-left select-none"
+        className="flex min-h-[42px] h-auto w-full items-center justify-between gap-2 rounded-md border border-input bg-background/50 hover:bg-background/80 px-3 py-2 text-sm transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 text-left select-none"
       >
-        <span className={selectedOption ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-          {selectedOption ? selectedOption.name : placeholder}
-        </span>
-        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 flex-1 min-w-0 py-0.5">
+          <span className={`break-words leading-snug ${selectedOption ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+            {selectedOption ? selectedOption.name : placeholder}
+          </span>
+          {selectedOption && selectedOption.count !== undefined && (
+            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-mono shrink-0 w-fit">
+              {selectedOption.count} {selectedOption.count === 1 ? 'skill' : 'skills'}
+            </span>
+          )}
+        </div>
+        <ChevronDown className={`h-4 w-4 opacity-60 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && coords && createPortal(
         <div 
           ref={dropdownRef}
+          role="listbox"
           style={{ top: coords.top + 4, left: coords.left, width: coords.width }}
-          className="absolute z-[9999] max-h-64 overflow-hidden rounded-lg border border-border/80 bg-card text-card-foreground shadow-xl flex flex-col backdrop-blur-md animate-in fade-in-0 slide-in-from-top-1 duration-100"
+          className="fixed z-[9999] max-h-72 overflow-hidden rounded-lg border border-border/80 bg-card text-card-foreground shadow-2xl flex flex-col backdrop-blur-md animate-in fade-in-0 slide-in-from-top-1 duration-100"
         >
           <div className="flex items-center border-b border-border px-3 py-2 gap-2 bg-muted/20 shrink-0">
             <Search className="h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
@@ -83,36 +103,41 @@ export default function SearchSelect({ value, onValueChange, options, placeholde
               type="text"
               placeholder="Search categories..."
               value={search}
+              aria-label="Search categories"
               onChange={(e) => setSearch(e.target.value)}
               className="flex h-7 w-full rounded-md bg-transparent text-sm outline-none placeholder:text-muted-foreground focus:outline-none focus:ring-0 px-2" 
               autoFocus
             />
           </div>
-          <ScrollArea className="flex-1 overflow-y-auto p-1 max-h-48">
+          <ScrollArea className="flex-1 overflow-y-auto p-1.5 max-h-56">
             {filteredOptions.length === 0 ? (
               <div className="py-6 text-center text-xs text-muted-foreground">No matches found</div>
             ) : (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 {filteredOptions.map((opt) => {
                   const isSelected = opt.id === value;
                   return (
                     <button
                       key={opt.id}
                       type="button"
+                      role="option"
+                      aria-selected={isSelected}
                       onClick={() => {
                         onValueChange(opt.id);
                         setOpen(false);
                       }}
-                      className={`relative flex w-full cursor-default select-none items-center rounded-md py-2 pl-8 pr-2 text-xs outline-none hover:bg-muted/80 text-left transition-colors ${
-                        isSelected ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
+                      className={`flex items-center justify-between gap-2 w-full px-2.5 py-2 rounded-md text-xs transition-colors select-none text-left ${
+                        isSelected 
+                          ? 'bg-primary/15 text-primary font-semibold' 
+                          : 'hover:bg-muted text-foreground'
                       }`}
                     >
-                      {isSelected && (
-                        <span className="absolute left-2.5 flex h-3.5 w-3.5 items-center justify-center">
-                          <Check className="h-3.5 w-3.5 text-primary" />
+                      <span className="break-words leading-snug flex-1 min-w-0">{opt.name}</span>
+                      {opt.count !== undefined && (
+                        <span className="text-[10px] opacity-80 bg-muted/80 px-1.5 py-0.5 rounded font-mono shrink-0">
+                          {opt.count}
                         </span>
                       )}
-                      {opt.name}
                     </button>
                   );
                 })}

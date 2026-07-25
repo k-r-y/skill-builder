@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import { generateSkill } from './lib/gemini';
 import { loadState, saveState } from './lib/storage';
-import { createCartItem, batchGenerate } from './lib/cart';
+import { createCartItem, batchGenerate, downloadSingleSkill } from './lib/cart';
 import { getStoredSkills, saveSkill, seedDefaultSkills } from './lib/skillsManager';
 import { parseSkillMd } from './utils/skillParser';
 import CartPanel from './components/CartPanel';
@@ -16,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
-import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, Plus, Check } from 'lucide-react';
+import { Copy, Download, Loader2, Sparkles, Terminal, Info, Sun, Moon, Plus, Check, Search, X, ChevronDown, Settings, CornerDownLeft, Code } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'skillBuilderState';
 const CART_STORAGE_KEY  = 'skillBuilderCart';
@@ -45,6 +46,70 @@ function App() {
   const [isBatchRunning, setIsBatch]  = useState(false);
   const [previewItem, setPreviewItem] = useState(null);
   const [editItem, setEditItem]       = useState(null);
+
+  // --- Global Search & Settings state ---
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSkillsExpanded, setIsSkillsExpanded] = useState(false);
+  const searchInputRef = React.useRef(null);
+  const searchContainerRef = React.useRef(null);
+  const searchDropdownRef = React.useRef(null);
+  const [searchCoords, setSearchCoords] = useState(null);
+
+  useEffect(() => {
+    if (isSearchOpen && searchContainerRef.current) {
+      const updateCoords = () => {
+        if (searchContainerRef.current) {
+          const rect = searchContainerRef.current.getBoundingClientRect();
+          setSearchCoords({
+            top: rect.bottom,
+            left: rect.left,
+            width: rect.width,
+          });
+        }
+      };
+      updateCoords();
+      window.addEventListener('scroll', updateCoords, true);
+      window.addEventListener('resize', updateCoords);
+      return () => {
+        window.removeEventListener('scroll', updateCoords, true);
+        window.removeEventListener('resize', updateCoords);
+      };
+    }
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target) &&
+        (!searchDropdownRef.current || !searchDropdownRef.current.contains(e.target))
+      ) {
+        setIsSearchOpen(false);
+      }
+    }
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      if (e.key === 'Escape') {
+        if (isSearchOpen || isSettingsOpen) {
+          e.preventDefault();
+          setIsSearchOpen(false);
+          setIsSettingsOpen(false);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('theme') || 'dark';
@@ -90,11 +155,37 @@ function App() {
       const catName = s.metadata?.category || 'General';
       const catId = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       if (!cats.has(catId)) {
-        cats.set(catId, { id: catId, name: catName });
+        cats.set(catId, { id: catId, name: catName, count: 1 });
+      } else {
+        cats.get(catId).count += 1;
       }
     });
-    return Array.from(cats.values());
+    return Array.from(cats.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [storedSkills]);
+
+  const globalSearchResults = React.useMemo(() => {
+    if (!globalSearch.trim()) return [];
+    const query = globalSearch.toLowerCase().trim();
+    return storedSkills.filter(s => {
+      const name = (s.metadata?.name || s.name || s.id || '').toLowerCase();
+      const desc = (s.metadata?.description || s.body || s.trigger || '').toLowerCase();
+      const cat = (s.metadata?.category || '').toLowerCase();
+      const id = (s.id || '').toLowerCase();
+      return name.includes(query) || desc.includes(query) || cat.includes(query) || id.includes(query);
+    });
+  }, [storedSkills, globalSearch]);
+
+  const handleSelectSkillFromSearch = (skill) => {
+    const catName = skill.metadata?.category || 'General';
+    const catId = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    setState(prev => ({
+      ...prev,
+      categoryId: catId,
+      skillId: skill.id
+    }));
+    setGlobalSearch('');
+    setIsSearchOpen(false);
+  };
 
   const filteredSkills = React.useMemo(() => {
     if (!state.categoryId) return [];
@@ -247,17 +338,9 @@ ${parsed.body}`;
     }
   };
 
-  const handleDownload = () => {
-    if (state.generatedContent) {
-      const blob = new Blob([state.generatedContent], { type: 'text/markdown' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `${selectedSkill?.name?.replace(/\s+/g, '-').toLowerCase() || 'skill'}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (state.generatedContent || selectedSkill) {
+      await downloadSingleSkill(selectedSkill, state.generatedContent);
     }
   };
 
@@ -274,41 +357,46 @@ ${parsed.body}`;
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground flex flex-col items-center">
-      {/* Header */}
-      <header className="w-full max-w-7xl mx-auto py-4 md:py-6 px-4 md:px-8 border-b border-border/40 flex flex-col sm:flex-row gap-4 justify-between items-center backdrop-blur-md sticky top-0 z-10 bg-background/80">
-        <div className="flex items-center gap-2">
+      {/* Header with macOS Spotlight Search Bar */}
+      <header className="w-full max-w-7xl mx-auto py-3 md:py-4 px-4 md:px-8 border-b border-border/40 flex items-center justify-between gap-4 backdrop-blur-md sticky top-0 z-30 bg-background/80">
+        {/* Left Brand Title */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <Terminal className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">Skill Builder</h1>
-          <span className="ml-1 text-[10px] font-mono text-primary/60 border border-primary/20 rounded px-1.5 py-0.5 leading-none">v2</span>
+          <h1 className="text-xl font-bold tracking-tight hidden sm:inline-block">Skill Builder</h1>
+          <span className="text-[10px] font-mono text-primary/70 bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 leading-none">v2</span>
         </div>
-        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-          {/* AI / Offline toggle */}
-          <div className="flex items-center gap-2 text-sm shrink-0">
-            <span className={`text-xs font-medium transition-colors ${!useAI ? 'text-foreground' : 'text-muted-foreground'}`}>Offline</span>
-            <button
-              id="ai-mode-toggle"
-              role="switch"
-              aria-checked={useAI}
-              onClick={() => setUseAI(v => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${useAI ? 'bg-primary' : 'bg-muted'}`}
-            >
-              <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${useAI ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-            <span className={`text-xs font-medium transition-colors ${useAI ? 'text-foreground' : 'text-muted-foreground'}`}>AI</span>
-          </div>
 
-          <div className="relative shrink-0 max-w-[150px] xs:max-w-none">
-            <Label htmlFor="apiKey" className="sr-only">Gemini API Key</Label>
-            <input
-              id="apiKey"
-              type="password"
-              placeholder="Gemini API Key"
-              disabled={!useAI}
-              className={`px-3 py-1.5 w-full rounded-md border border-border bg-input/50 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-opacity ${useAI ? 'opacity-100' : 'opacity-30 cursor-not-allowed'}`}
-              value={state.apiKey}
-              onChange={(e) => handleStateChange('apiKey', e.target.value)}
-            />
-          </div>
+        {/* Center: ReactBits-Style Spotlight Search Trigger Button */}
+        <div className="flex-1 max-w-md mx-2 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center justify-between gap-3 w-full px-3.5 py-2 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 text-muted-foreground text-xs font-medium transition-all shadow-inner group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Search className="w-4 h-4 text-muted-foreground opacity-60 group-hover:text-foreground transition-colors shrink-0" />
+              <span className="truncate">Search skills...</span>
+            </div>
+            <kbd className="hidden sm:inline-block text-[10px] text-muted-foreground/80 bg-background/60 border border-border/80 px-1.5 py-0.5 rounded-md font-mono shrink-0 select-none">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+
+        {/* Right Controls: Settings Button & Theme Toggle */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl h-9 px-3 border-border text-xs font-medium"
+          >
+            <Settings className="w-3.5 h-3.5 text-primary" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono ml-0.5">
+              {useAI ? 'AI' : 'System'}
+            </span>
+          </Button>
 
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-9 h-9 border border-border shrink-0">
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -317,10 +405,200 @@ ${parsed.body}`;
         </div>
       </header>
 
-      <main className="w-full max-w-7xl mx-auto flex-1 p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* ── ReactBits Style Spotlight Search Modal Portal ───────────────── */}
+      {isSearchOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-md flex items-start justify-center pt-[10vh] sm:pt-[14vh] px-4 animate-in fade-in-0 duration-150"
+          onClick={() => setIsSearchOpen(false)}
+        >
+          <div 
+            ref={searchDropdownRef}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#121118]/95 text-foreground border border-white/10 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col backdrop-blur-2xl p-3 sm:p-4 gap-3 animate-in zoom-in-95 duration-150"
+          >
+            {/* Search Input Top Bar with rounded-xl pill container */}
+            <div className="flex items-center px-3.5 py-2.5 gap-3 rounded-xl border border-white/10 bg-white/[0.04] focus-within:border-primary/50 transition-all">
+              <Search className="w-4 h-4 text-muted-foreground/70 shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search skills or categories..."
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 border-0 focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 shadow-none font-medium p-0 !outline-none !ring-0 !border-none"
+                autoFocus
+              />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="p-1 rounded-md hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              
+            </div>
+
+            {/* Results List */}
+            <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
+              {!globalSearch.trim() ? (
+                <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground/60">
+                  <Sparkles className="w-6 h-6 text-primary/70 animate-pulse" />
+                  <p className="text-xs font-medium">Type a skill name or category (e.g. "frontend", "branding", "firebase")...</p>
+                </div>
+              ) : globalSearchResults.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground/60">
+                  No skills found matching "{globalSearch}"
+                </div>
+              ) : (
+                globalSearchResults.map((s) => {
+                  const isSelected = state.skillId === s.id;
+                  const rawName = s.metadata?.name || s.name;
+                  const skillName = (rawName && rawName !== 'Unnamed Skill') ? rawName : s.id;
+                  const categoryName = s.metadata?.category || 'General';
+
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => handleSelectSkillFromSearch(s)}
+                      className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition-all select-none group ${
+                        isSelected
+                          ? 'bg-primary/20 border-primary/40 text-foreground shadow-md'
+                          : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.08] hover:border-white/10 text-foreground'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
+                          <Code className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                          <span className="font-semibold text-sm text-foreground tracking-tight break-words group-hover:text-primary transition-colors">
+                            {skillName}
+                          </span>
+                          <span className="text-xs text-muted-foreground/70 font-mono flex items-center gap-1">
+                            in <span className="text-muted-foreground font-sans">{categoryName}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <CornerDownLeft className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground transition-colors shrink-0 ml-3" />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsOpen && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in-0">
+          <div className="bg-card text-card-foreground border border-border/80 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6 flex flex-col gap-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border/50 pb-3.5">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold tracking-tight">Generation Engine Settings</h2>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Response Generation Mode
+              </Label>
+
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUseAI(false)}
+                  className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                    !useAI 
+                      ? 'bg-primary/10 border-primary text-foreground shadow-sm ring-1 ring-primary/30' 
+                      : 'bg-muted/30 border-border/60 hover:bg-muted/60 text-muted-foreground'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <span>System Default Mode</span>
+                      <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">Offline</span>
+                    </span>
+                    {!useAI && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground/90 leading-snug">
+                    Deterministic, instant skill structure code generated from local templates and offline fallbacks. Zero API latency.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setUseAI(true)}
+                  className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                    useAI 
+                      ? 'bg-primary/10 border-primary text-foreground shadow-sm ring-1 ring-primary/30' 
+                      : 'bg-muted/30 border-border/60 hover:bg-muted/60 text-muted-foreground'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <span>AI Generated Mode</span>
+                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono">Gemini AI</span>
+                    </span>
+                    {useAI && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground/90 leading-snug">
+                    Dynamic LLM-generated skill structures powered by Google Gemini API.
+                  </p>
+                </button>
+              </div>
+
+              {useAI && (
+                <div className="flex flex-col gap-2 pt-3 border-t border-border/40 mt-1">
+                  <Label htmlFor="settingsApiKey" className="text-xs font-medium text-foreground flex items-center justify-between">
+                    <span>Gemini API Key</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">Stored locally</span>
+                  </Label>
+                  <input
+                    id="settingsApiKey"
+                    type="password"
+                    placeholder="Paste Gemini API key..."
+                    className="px-3.5 py-2 w-full rounded-xl border border-input bg-background/80 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+                    value={state.apiKey}
+                    onChange={(e) => handleStateChange('apiKey', e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-border/50">
+              <Button 
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="rounded-xl px-5 font-semibold text-xs"
+              >
+                Save & Close
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      <main className="w-full max-w-7xl mx-auto flex-1 p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
         {/* ── Left Column ─────────────────────────────────────────────── */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight mb-2">Configure Context</h2>
             <p className="text-muted-foreground text-sm">Select the mechanical foundation and provide custom constraints.</p>
@@ -338,77 +616,120 @@ ${parsed.body}`;
             fillOpacity={0.0}
           >
             <Card className="bg-transparent border-0 shadow-none w-full h-full">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Domain & Skill</CardTitle>
-                <CardDescription>Choose the primary software domain and target concept.</CardDescription>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Domain & Skill</CardTitle>
+                  <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded font-mono">
+                    130 Skills Available
+                  </span>
+                </div>
+                <CardDescription>Filter by domain category or browse concepts below.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
+
+                {/* ── Category Select ──────────────────────────────── */}
                 <div className="flex flex-col gap-2">
                   <Label>Category</Label>
                   <SearchSelect
                     value={state.categoryId}
-                    onValueChange={(v) => handleStateChange('categoryId', v)}
+                    onValueChange={(v) => {
+                      handleStateChange('categoryId', v);
+                      setGlobalSearch('');
+                      setIsSkillsExpanded(false);
+                    }}
                     options={categories}
                     placeholder="Select a category"
                   />
                 </div>
 
+                {/* ── Skill Concept Grid (Collapsible & Max-Height Scrollable) ───── */}
                 <div className="flex flex-col gap-2">
-                  <Label className="flex justify-between items-center">
-                    <span>Skill Concept</span>
-                    {state.skillId && (
-                      <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-mono font-medium">
-                        Selected
-                      </span>
-                    )}
-                  </Label>
+                  <div className="flex justify-between items-center">
+                    <Label>Skill Concept</Label>
+                    <div className="flex items-center gap-2">
+                      {filteredSkills.length > 10 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsSkillsExpanded(v => !v)}
+                          className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-0.5 select-none"
+                        >
+                          {isSkillsExpanded ? 'Collapse ↑' : `Show all ${filteredSkills.length} ↓`}
+                        </button>
+                      )}
+                      {state.skillId && (
+                        <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-mono font-medium">
+                          Selected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {!state.categoryId ? (
                     <div className="text-xs text-muted-foreground bg-muted/5 border border-dashed border-border/60 p-4 rounded-md text-center py-6">
-                      Select a category first to view available concepts.
+                      Select a domain category or use Spotlight search (⌘K) to pick a skill.
+                    </div>
+                  ) : filteredSkills.length === 0 ? (
+                    <div className="text-xs text-muted-foreground bg-muted/5 border border-dashed border-border/60 p-4 rounded-md text-center py-6">
+                      No matching skills found.
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {filteredSkills.map(s => {
-                        const isSelected = state.skillId === s.id;
-                        const skillName = s.metadata?.name || s.name;
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => handleStateChange('skillId', s.id)}
-                            className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
-                              isSelected
-                                ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
-                                : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="truncate leading-none">{skillName}</span>
+                    <div className="flex flex-col gap-2">
+                      <div className="max-h-72 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-border/70 flex flex-col gap-1.5">
+                        {(isSkillsExpanded ? filteredSkills : filteredSkills.slice(0, 10)).map(s => {
+                          const isSelected = state.skillId === s.id;
+                          const rawName = s.metadata?.name || s.name;
+                          const skillName = (rawName && rawName !== 'Unnamed Skill') ? rawName : (s.id || 'Custom Skill');
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => handleSelectSkillFromSearch(s)}
+                              className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 select-none flex items-center justify-between gap-2 w-full text-left ${
+                                isSelected
+                                  ? 'bg-primary/20 border-primary text-foreground shadow-sm ring-1 ring-primary/30'
+                                  : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              <span className="font-semibold text-foreground break-words leading-snug flex-1">{skillName}</span>
                               {s.files && s.files.length > 0 && (
-                                <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm font-medium tracking-wide">
+                                <span 
+                                  title={`${s.files.length} supporting files included (scripts/templates)`}
+                                  className="text-[10px] bg-primary/15 text-primary border border-primary/20 px-1.5 py-0.5 rounded-md font-mono font-bold tracking-tight shrink-0"
+                                >
                                   +{s.files.length}
                                 </span>
                               )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                      
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleStateChange('skillId', 'custom-skill');
-                          handleStateChange('customSkillName', '');
-                        }}
-                        className={`px-3 py-2 rounded-md border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 grow sm:grow-0 text-left justify-start ${
-                          state.skillId === 'custom-skill'
-                            ? 'bg-primary/20 border-primary text-foreground shadow-sm shadow-primary/10 ring-1 ring-primary/20'
-                            : 'bg-muted/30 border-dashed border-border/70 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span className="truncate leading-none">Custom Skill...</span>
-                      </button>
+                            </button>
+                          );
+                        })}
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleStateChange('skillId', 'custom-skill');
+                            handleStateChange('customSkillName', '');
+                          }}
+                          className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 select-none flex items-center gap-2 w-full text-left justify-start ${
+                            state.skillId === 'custom-skill'
+                              ? 'bg-primary/20 border-primary text-foreground shadow-sm ring-1 ring-primary/30'
+                              : 'bg-muted/30 border-dashed border-border/70 hover:bg-muted/60 text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
+                          <span className="break-words leading-none">Custom Skill...</span>
+                        </button>
+                      </div>
+
+                      {!isSkillsExpanded && filteredSkills.length > 10 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsSkillsExpanded(true)}
+                          className="w-full py-1 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-border/60 hover:bg-muted/40 rounded-md transition-colors font-medium flex items-center justify-center gap-1"
+                        >
+                          <span>Show {filteredSkills.length - 10} more skills in this category</span>
+                          <ChevronDown className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -515,7 +836,7 @@ ${parsed.body}`;
 
         {/* ── Right Column ─────────────────────────────────────────────── */}
         <BorderGlow
-          className="lg:col-span-8 flex flex-col min-h-[600px] shadow-sm backdrop-blur-sm"
+          className="lg:col-span-7 xl:col-span-8 flex flex-col min-h-[600px] shadow-sm backdrop-blur-sm"
           edgeSensitivity={30}
           glowColor="240 5 75"
           backgroundColor="hsl(var(--card) / 0.5)"
@@ -571,38 +892,38 @@ ${parsed.body}`;
                 {state.generatedContent ? (() => {
                   const { metadata, body } = parseSkillMd(state.generatedContent);
                   return (
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-6 w-full max-w-full overflow-hidden">
                       {metadata && (
-                        <div className="border border-border/60 bg-muted/20 rounded-lg overflow-hidden text-xs font-mono">
+                        <div className="border border-border/60 bg-muted/20 rounded-lg overflow-hidden text-xs font-mono w-full max-w-full">
                           <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/40">
-                            <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
+                            <span className="w-2 h-2 rounded-full bg-yellow-400/80 shrink-0" />
                             <span className="text-muted-foreground tracking-widest uppercase text-[10px] font-semibold">Skill Metadata</span>
                           </div>
-                          <div className="p-4 flex flex-col gap-2">
-                            <div className="flex gap-3">
-                              <span className="text-muted-foreground w-24 shrink-0">name</span>
-                              <span className="text-foreground font-semibold">{metadata.name}</span>
+                          <div className="p-4 flex flex-col gap-2.5 w-full">
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-3 w-full">
+                              <span className="text-muted-foreground w-24 shrink-0 font-medium">name</span>
+                              <span className="text-foreground font-semibold break-words min-w-0 flex-1">{metadata.name}</span>
                             </div>
-                            <div className="flex gap-3">
-                              <span className="text-muted-foreground w-24 shrink-0">description</span>
-                              <span className="text-foreground leading-relaxed">{metadata.description}</span>
+                            <div className="flex flex-col sm:flex-row gap-1 sm:gap-3 w-full">
+                              <span className="text-muted-foreground w-24 shrink-0 font-medium">description</span>
+                              <span className="text-foreground leading-relaxed break-words min-w-0 flex-1">{metadata.description}</span>
                             </div>
                             {metadata.category && (
-                              <div className="flex gap-3">
-                                <span className="text-muted-foreground w-24 shrink-0">category</span>
-                                <span className="text-foreground">{metadata.category}</span>
+                              <div className="flex flex-col sm:flex-row gap-1 sm:gap-3 w-full">
+                                <span className="text-muted-foreground w-24 shrink-0 font-medium">category</span>
+                                <span className="text-foreground break-words min-w-0 flex-1">{metadata.category}</span>
                               </div>
                             )}
                             {metadata.version && (
-                              <div className="flex gap-3">
-                                <span className="text-muted-foreground w-24 shrink-0">version</span>
-                                <span className="text-foreground">{metadata.version}</span>
+                              <div className="flex flex-col sm:flex-row gap-1 sm:gap-3 w-full">
+                                <span className="text-muted-foreground w-24 shrink-0 font-medium">version</span>
+                                <span className="text-foreground break-words min-w-0 flex-1">{metadata.version}</span>
                               </div>
                             )}
                           </div>
                         </div>
                       )}
-                      <div className="markdown-preview max-w-none">
+                      <div className="markdown-preview max-w-full w-full overflow-hidden">
                         <ReactMarkdown>{body}</ReactMarkdown>
                       </div>
                       <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex items-start gap-3">

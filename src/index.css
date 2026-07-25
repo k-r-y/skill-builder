@@ -57,6 +57,7 @@
     @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground;
     font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
   }
 }
 
@@ -85,28 +86,35 @@ pre {
 
 @layer components {
   .markdown-preview {
-    @apply text-muted-foreground text-sm leading-relaxed;
+    @apply text-muted-foreground text-sm leading-relaxed w-full max-w-full overflow-hidden break-words;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .markdown-preview h1, 
   .markdown-preview h2, 
   .markdown-preview h3, 
   .markdown-preview h4 {
-    @apply text-foreground font-semibold tracking-tight mt-8 mb-4 first:mt-0;
+    @apply text-foreground font-semibold tracking-tight mt-8 mb-4 first:mt-0 break-words;
+    overflow-wrap: anywhere;
   }
   .markdown-preview h1 {
-    @apply text-2xl;
+    @apply text-xl sm:text-2xl;
   }
   .markdown-preview h2 {
-    @apply text-lg;
+    @apply text-base sm:text-lg;
   }
-  .markdown-preview p {
-    @apply mb-4 last:mb-0;
+  .markdown-preview p,
+  .markdown-preview li,
+  .markdown-preview span {
+    @apply mb-4 last:mb-0 break-words;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .markdown-preview strong {
     @apply text-foreground font-medium;
   }
   .markdown-preview ul, .markdown-preview ol {
-    @apply mb-4 pl-5 space-y-2;
+    @apply mb-4 pl-5 space-y-2 max-w-full;
   }
   .markdown-preview ul {
     @apply list-disc;
@@ -115,7 +123,7 @@ pre {
     @apply list-decimal;
   }
   .markdown-preview table {
-    @apply w-full text-left border-collapse border border-border/40 rounded-lg overflow-hidden mb-8 text-sm;
+    @apply w-full text-left border-collapse border border-border/40 rounded-lg overflow-hidden mb-8 text-sm block overflow-x-auto max-w-full;
   }
   .markdown-preview thead {
     @apply bg-muted/20 border-b border-border/40;
@@ -127,19 +135,21 @@ pre {
     @apply border-b border-border/20 last:border-0 hover:bg-muted/5 transition-colors;
   }
   .markdown-preview td {
-    @apply px-4 py-3 align-top;
+    @apply px-4 py-3 align-top break-words;
   }
   .markdown-preview code {
-    @apply px-1.5 py-0.5 rounded bg-muted/50 font-mono text-[0.85em] text-foreground;
+    @apply px-1.5 py-0.5 rounded bg-muted/50 font-mono text-[0.85em] text-foreground break-words;
+    overflow-wrap: anywhere;
   }
   .markdown-preview pre {
-    @apply bg-[#0D0D12] p-4 rounded-lg overflow-x-auto border border-border/30 mb-6;
+    @apply bg-[#0D0D12] p-4 rounded-lg overflow-x-auto max-w-full border border-border/30 mb-6;
   }
   .markdown-preview pre code {
-    @apply bg-transparent p-0 text-sm border-0 text-gray-300;
+    @apply bg-transparent p-0 text-sm border-0 text-gray-300 whitespace-pre-wrap break-words;
+    overflow-wrap: anywhere;
   }
   .markdown-preview blockquote {
-    @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground my-4;
+    @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground my-4 break-words;
   }
 }
 

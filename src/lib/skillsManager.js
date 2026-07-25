@@ -79,6 +79,108 @@ const COMMUNITY_SKILLS_TO_SEED = [
     fallbackCategory: 'QA & Test Automation'
   }
 ];
+export const CATEGORY_MAP = {
+  // 1. AI Agents & Vibe Coding
+  'claude-api': 'AI Agents & Vibe Coding',
+  'google-antigravity-sdk': 'AI Agents & Vibe Coding',
+  'mcp-builder': 'AI Agents & Vibe Coding',
+  'skill-creator': 'AI Agents & Vibe Coding',
+  'workflow-skill-creator': 'AI Agents & Vibe Coding',
+
+  // 2. UI/UX, Web Design & Visual Identity
+  'brand-guidelines': 'UI/UX, Web Design & Visual Identity',
+  'theme-factory': 'UI/UX, Web Design & Visual Identity',
+  'frontend-design': 'UI/UX, Web Design & Visual Identity',
+  'web-design-guidelines': 'UI/UX, Web Design & Visual Identity',
+  'canvas-design': 'UI/UX, Web Design & Visual Identity',
+  'algorithmic-art': 'UI/UX, Web Design & Visual Identity',
+  'slack-gif-creator': 'UI/UX, Web Design & Visual Identity',
+  'responsive-layouts': 'UI/UX, Web Design & Visual Identity',
+  'web-artifacts-builder': 'UI/UX, Web Design & Visual Identity',
+
+  // 3. Full-Stack Infrastructure & Deployment
+  'firebase-auth-basics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-firestore': 'Full-Stack Infrastructure & Deployment',
+  'firebase-data-connect': 'Full-Stack Infrastructure & Deployment',
+  'firebase-crashlytics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-app-hosting-basics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-remote-config-basics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-security-rules-auditor': 'Full-Stack Infrastructure & Deployment',
+  'firebase-ai-logic-basics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-hosting-basics': 'Full-Stack Infrastructure & Deployment',
+  'firebase-basics': 'Full-Stack Infrastructure & Deployment',
+  'deploy-to-vercel': 'Full-Stack Infrastructure & Deployment',
+  'vercel-cli-with-tokens': 'Full-Stack Infrastructure & Deployment',
+  'vercel-optimize': 'Full-Stack Infrastructure & Deployment',
+  'vercel-composition-patterns': 'Full-Stack Infrastructure & Deployment',
+  'vercel-react-best-practices': 'Full-Stack Infrastructure & Deployment',
+  'vercel-react-view-transitions': 'Full-Stack Infrastructure & Deployment',
+  'vercel-react-native-skills': 'Full-Stack Infrastructure & Deployment',
+  'android-cli': 'Full-Stack Infrastructure & Deployment',
+  'xcode-project-setup': 'Full-Stack Infrastructure & Deployment',
+
+  // 4. Performance, Debugging & Web Tools
+  'chrome-devtools': 'Performance, Debugging & Web Tools',
+  'troubleshooting': 'Performance, Debugging & Web Tools',
+  'memory-leak-debugging': 'Performance, Debugging & Web Tools',
+  'debug-optimize-lcp': 'Performance, Debugging & Web Tools',
+  'a11y-debugging': 'Performance, Debugging & Web Tools',
+  'modern-web-guidance': 'Performance, Debugging & Web Tools',
+  'chrome-extensions': 'Performance, Debugging & Web Tools',
+
+  // 6. Administration, Comms & Documentation
+  'docx': 'Administration, Comms & Documentation',
+  'pdf': 'Administration, Comms & Documentation',
+  'pptx': 'Administration, Comms & Documentation',
+  'xlsx': 'Administration, Comms & Documentation',
+  'doc-coauthoring': 'Administration, Comms & Documentation',
+  'internal-comms': 'Administration, Comms & Documentation',
+  'writing-guidelines': 'Administration, Comms & Documentation',
+
+  // 7. Bioinformatics & Scientific Computing
+  'alphafold-database-fetch-and-analyze': 'Bioinformatics & Scientific Computing',
+  'alphagenome-single-variant-analysis': 'Bioinformatics & Scientific Computing',
+  'chembl-database': 'Bioinformatics & Scientific Computing',
+  'clinical-trials-database': 'Bioinformatics & Scientific Computing',
+  'clinvar-database': 'Bioinformatics & Scientific Computing',
+  'dbsnp-database': 'Bioinformatics & Scientific Computing',
+  'embl-ebi-ols': 'Bioinformatics & Scientific Computing',
+  'encode-ccres-database': 'Bioinformatics & Scientific Computing',
+  'ensembl-database': 'Bioinformatics & Scientific Computing',
+  'foldseek-structural-search': 'Bioinformatics & Scientific Computing',
+  'gnomad-database': 'Bioinformatics & Scientific Computing',
+  'gtex-database': 'Bioinformatics & Scientific Computing',
+  'human-protein-atlas-database': 'Bioinformatics & Scientific Computing',
+  'interpro-database': 'Bioinformatics & Scientific Computing',
+  'jaspar-database': 'Bioinformatics & Scientific Computing',
+  'literature-search-arxiv': 'Bioinformatics & Scientific Computing',
+  'literature-search-biorxiv': 'Bioinformatics & Scientific Computing',
+  'literature-search-europepmc': 'Bioinformatics & Scientific Computing',
+  'literature-search-openalex': 'Bioinformatics & Scientific Computing',
+  'ncbi-sequence-fetch': 'Bioinformatics & Scientific Computing',
+  'openfda-database': 'Bioinformatics & Scientific Computing',
+  'opentargets-database': 'Bioinformatics & Scientific Computing',
+  'pdb-database': 'Bioinformatics & Scientific Computing',
+  'protein-sequence-msa': 'Bioinformatics & Scientific Computing',
+  'protein-sequence-similarity-search': 'Bioinformatics & Scientific Computing',
+  'pubchem-database': 'Bioinformatics & Scientific Computing',
+  'pubmed-database': 'Bioinformatics & Scientific Computing',
+  'pymol': 'Bioinformatics & Scientific Computing',
+  'quickgo-database': 'Bioinformatics & Scientific Computing',
+  'reactome-database': 'Bioinformatics & Scientific Computing',
+  'string-database': 'Bioinformatics & Scientific Computing',
+  'ucsc-conservation-and-tfbs': 'Bioinformatics & Scientific Computing',
+  'unibind-database': 'Bioinformatics & Scientific Computing',
+  'uniprot-database': 'Bioinformatics & Scientific Computing',
+  'uv': 'Bioinformatics & Scientific Computing'
+};
+
+export function getCategoryForSkill(skillId, parsedCategory) {
+  if (CATEGORY_MAP[skillId]) return CATEGORY_MAP[skillId];
+  if (parsedCategory && parsedCategory !== 'General' && parsedCategory !== 'Community Skills') return parsedCategory;
+  return 'Quality Assurance & Automated Testing';
+}
+
 /**
  * Retrieves the stored skills list from localStorage.
  * @returns {Array} Array of parsed skill objects.
@@ -102,11 +204,15 @@ export function getStoredSkills() {
 export function saveSkill(rawContent) {
   const parsed = parseSkillMd(rawContent);
   const slug = parsed.metadata.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const category = getCategoryForSkill(slug, parsed.metadata.category);
   
   const skillObj = {
     id: slug,
     raw: rawContent,
-    metadata: parsed.metadata,
+    metadata: {
+      ...parsed.metadata,
+      category: category
+    },
     body: parsed.body,
     updatedAt: Date.now()
   };
@@ -136,27 +242,48 @@ export async function seedDefaultSkills() {
 
   // 1. Seed initially with the local offline fallbacks immediately
   const initialSkills = [...stored];
-  if (initialSkills.length === 0) {
-    for (const [skillId, raw] of Object.entries(fallbacks)) {
-      if (!raw) continue;
+  let seededNew = false;
+  for (const [skillId, raw] of Object.entries(fallbacks)) {
+    if (!raw) continue;
 
-      const parsed = parseSkillMd(raw);
-      
-      const fallbackMatch = COMMUNITY_SKILLS_TO_SEED.find(s => s.url.includes(skillId));
-      const category = parsed.metadata.category || (fallbackMatch ? fallbackMatch.fallbackCategory : 'Community Skills');
+    const existingIdx = initialSkills.findIndex(s => s.id === skillId);
+    const parsed = parseSkillMd(raw);
+    const category = getCategoryForSkill(skillId, parsed.metadata.category);
+    const name = (parsed.metadata.name && parsed.metadata.name !== 'Unnamed Skill') ? parsed.metadata.name : skillId;
 
-      initialSkills.push({
-        id: skillId,
-        raw: raw,
-        metadata: {
-          ...parsed.metadata,
+    if (existingIdx !== -1) {
+      const storedItem = initialSkills[existingIdx];
+      const needsCategoryUpdate = storedItem.metadata?.category !== category;
+      const needsNameUpdate = !storedItem.metadata?.name || storedItem.metadata.name === 'Unnamed Skill';
+
+      if (needsCategoryUpdate || needsNameUpdate) {
+        initialSkills[existingIdx].metadata = {
+          ...storedItem.metadata,
+          name: needsNameUpdate ? name : storedItem.metadata.name,
           category: category
-        },
-        body: parsed.body,
-        isSeeded: true,
-        files: [] // no extra files for fallback
-      });
+        };
+        initialSkills[existingIdx].raw = raw;
+        seededNew = true;
+      }
+      continue;
     }
+
+    initialSkills.push({
+      id: skillId,
+      raw: raw,
+      metadata: {
+        ...parsed.metadata,
+        name: name,
+        category: category
+      },
+      body: parsed.body,
+      isSeeded: true,
+      files: [] // no extra files for fallback
+    });
+    seededNew = true;
+  }
+
+  if (stored.length === 0 || seededNew) {
     localStorage.setItem('community_skills', JSON.stringify(initialSkills));
     localStorage.setItem('community_skills_seeded', 'true');
   }
@@ -186,13 +313,10 @@ export async function seedDefaultSkills() {
 
         // For each skill node, fetch content and group files
         const skillPromises = skillNodes.map(async (skillNode) => {
-          // e.g. path="skills/algorithmic-art/SKILL.md", dirPath="skills/algorithmic-art"
           const dirPath = skillNode.path.substring(0, skillNode.path.lastIndexOf('/'));
-          // ID from the folder name
           const folderName = dirPath.split('/').pop() || 'unknown-skill';
           const skillId = folderName.toLowerCase();
 
-          // Find other files in this directory
           const relatedFiles = data.tree.filter(node => 
             node.type === 'blob' && 
             node.path !== skillNode.path && 
@@ -211,16 +335,15 @@ export async function seedDefaultSkills() {
             
             if (rawContent && rawContent.includes('---')) {
               const parsed = parseSkillMd(rawContent);
-              
-              // Try to find if there was a fallback category
-              const fallbackMatch = COMMUNITY_SKILLS_TO_SEED.find(s => s.url.includes(folderName));
-              const category = parsed.metadata.category || (fallbackMatch ? fallbackMatch.fallbackCategory : 'Community Skills');
+              const category = getCategoryForSkill(skillId, parsed.metadata.category);
+              const name = (parsed.metadata.name && parsed.metadata.name !== 'Unnamed Skill') ? parsed.metadata.name : skillId;
 
               const skillObj = {
                 id: skillId,
                 raw: rawContent,
                 metadata: {
                   ...parsed.metadata,
+                  name: name,
                   category: category
                 },
                 body: parsed.body,
