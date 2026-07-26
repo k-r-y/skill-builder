@@ -22,7 +22,9 @@ export function createCartItem(skill, categoryName, customNotes = '') {
  * Returns a URL-safe filename slug for a skill.
  */
 export function getSkillSlug(skill) {
-  return skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  if (!skill) return 'skill';
+  const name = skill.metadata?.name || skill.name || skill.id || 'skill';
+  return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'skill';
 }
 
 /**
@@ -124,7 +126,11 @@ export async function batchDownload(items) {
     }
   }
 
-  const blob = await zip.generateAsync({ type: 'blob' });
+  const [blob] = await Promise.all([
+    zip.generateAsync({ type: 'blob' }),
+    new Promise(resolve => setTimeout(resolve, 600)),
+  ]);
+
   saveAs(blob, `skills-bundle-${Date.now()}.zip`);
 }
 
@@ -139,7 +145,7 @@ export async function downloadSingleSkill(skillObj, generatedContent) {
   if (!generatedContent && !skillObj?.raw) return;
 
   const rawName = skillObj?.metadata?.name || skillObj?.name || skillObj?.id || 'custom-skill';
-  const folderName = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'skill';
+  const folderName = String(rawName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'skill';
   const contentToSave = generatedContent || skillObj?.raw || '';
 
   const zip = new JSZip();
@@ -166,7 +172,11 @@ export async function downloadSingleSkill(skillObj, generatedContent) {
     }
   }
 
-  const blob = await zip.generateAsync({ type: 'blob' });
+  const [blob] = await Promise.all([
+    zip.generateAsync({ type: 'blob' }),
+    new Promise(resolve => setTimeout(resolve, 600)),
+  ]);
+
   saveAs(blob, `${folderName}.zip`);
 }
 

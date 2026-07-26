@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { X, Copy, Download, FileText, Check } from 'lucide-react';
+import { X, Copy, Download, FileText, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { downloadSingleSkill } from '../lib/cart';
@@ -8,17 +8,31 @@ import { parseSkillMd } from '../utils/skillParser';
 
 export default function SkillPreviewModal({ item, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!item) return null;
 
   const hasPending = item.status === 'pending' || !item.generatedContent;
   const { metadata, body } = hasPending ? { metadata: null, body: '' } : parseSkillMd(item.generatedContent);
+  const displayName = item.skill?.metadata?.name || item.skill?.name || item.skill?.id || 'Skill';
 
   const handleCopy = () => {
     if (item.generatedContent) {
       navigator.clipboard.writeText(item.generatedContent);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      await downloadSingleSkill(item);
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -31,7 +45,7 @@ export default function SkillPreviewModal({ item, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-base font-semibold text-foreground">{item.skill.name}</h2>
+            <h2 className="text-base font-semibold text-foreground">{displayName}</h2>
             <span className="text-xs text-muted-foreground">{item.categoryName}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -49,8 +63,22 @@ export default function SkillPreviewModal({ item, onClose }) {
                     </>
                   )}
                 </Button>
-                <Button variant="default" size="sm" onClick={() => downloadSingleSkill(item)} className="h-8 gap-1.5 text-xs">
-                  <Download className="w-3.5 h-3.5" /> Download
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleDownload} 
+                  disabled={isDownloading}
+                  className="h-8 gap-1.5 text-xs transition-all font-semibold"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Zipping...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" /> Download
+                    </>
+                  )}
                 </Button>
               </>
             )}

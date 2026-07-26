@@ -10,7 +10,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 221.2 83.2% 53.3%; /* Royal Blue 600 */
+    --primary: 142.1 70.6% 29.2%; /* Green 700 #15803d */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --ring: 142.1 70.6% 29.2%;
     --radius: 0.5rem;
   }
  
@@ -33,7 +33,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 221.2 83.2% 53.3%; /* Royal Blue 600 */
+    --primary: 142.1 76.2% 36.3%; /* Green 600 #16a34a */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -45,7 +45,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --ring: 142.1 76.2% 36.3%;
   }
 }
 
@@ -86,7 +86,7 @@ pre {
 
 @layer components {
   .markdown-preview {
-    @apply text-muted-foreground text-sm leading-relaxed w-full max-w-full overflow-hidden break-words;
+    @apply text-foreground/90 text-sm leading-relaxed w-full max-w-full overflow-hidden break-words;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -142,10 +142,10 @@ pre {
     overflow-wrap: anywhere;
   }
   .markdown-preview pre {
-    @apply bg-[#0D0D12] p-4 rounded-lg overflow-x-auto max-w-full border border-border/30 mb-6;
+    @apply bg-[#0D0D12] dark:bg-[#0D0D12] p-4 rounded-lg overflow-x-auto max-w-full border border-border/30 mb-6;
   }
   .markdown-preview pre code {
-    @apply bg-transparent p-0 text-sm border-0 text-gray-300 whitespace-pre-wrap break-words;
+    @apply bg-transparent p-0 text-sm border-0 text-gray-200 whitespace-pre-wrap break-words;
     overflow-wrap: anywhere;
   }
   .markdown-preview blockquote {
@@ -192,9 +192,9 @@ pre {
 .status-pill {
   @apply text-[10px] font-mono font-medium px-2 py-0.5 rounded-full border shrink-0;
 }
-.status-pending    { @apply text-muted-foreground border-border/50 bg-muted/20; }
-.status-generating { @apply text-blue-400 border-blue-400/30 bg-blue-400/10; }
-.status-done       { @apply text-emerald-400 border-emerald-400/30 bg-emerald-400/10; }
+.status-pending    { @apply text-muted-foreground border-border/50 bg-muted/40; }
+.status-generating { @apply text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10; }
+.status-done       { @apply text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10; }
 .status-error      { @apply text-destructive border-destructive/30 bg-destructive/10; }
 
 /* Cart action icon buttons */

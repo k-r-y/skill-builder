@@ -338,9 +338,19 @@ ${parsed.body}`;
     }
   };
 
+  const [isDownloadingSingle, setIsDownloadingSingle] = useState(false);
+
   const handleDownload = async () => {
+    if (isDownloadingSingle) return;
     if (state.generatedContent || selectedSkill) {
-      await downloadSingleSkill(selectedSkill, state.generatedContent);
+      setIsDownloadingSingle(true);
+      try {
+        await downloadSingleSkill(selectedSkill, state.generatedContent);
+      } catch (err) {
+        console.error('Download failed:', err);
+      } finally {
+        setIsDownloadingSingle(false);
+      }
     }
   };
 
@@ -348,8 +358,8 @@ ${parsed.body}`;
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#09090B] text-foreground">
-        <Loader2 className="w-10 h-10 animate-spin text-[#3B82F6] mb-4" />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground">
+        <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
         <p className="text-sm font-mono text-muted-foreground animate-pulse">Initializing Agent Skills Catalog...</p>
       </div>
     );
@@ -408,31 +418,31 @@ ${parsed.body}`;
       {/* ── ReactBits Style Spotlight Search Modal Portal ───────────────── */}
       {isSearchOpen && createPortal(
         <div 
-          className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-md flex items-start justify-center pt-[10vh] sm:pt-[14vh] px-4 animate-in fade-in-0 duration-150"
+          className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-start justify-center pt-[10vh] sm:pt-[14vh] px-4 animate-in fade-in-0 duration-150"
           onClick={() => setIsSearchOpen(false)}
         >
           <div 
             ref={searchDropdownRef}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#121118]/95 text-foreground border border-white/10 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col backdrop-blur-2xl p-3 sm:p-4 gap-3 animate-in zoom-in-95 duration-150"
+            className="bg-popover text-popover-foreground border border-border rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col backdrop-blur-2xl p-3 sm:p-4 gap-3 animate-in zoom-in-95 duration-150"
           >
             {/* Search Input Top Bar with rounded-xl pill container */}
-            <div className="flex items-center px-3.5 py-2.5 gap-3 rounded-xl border border-white/10 bg-white/[0.04] focus-within:border-primary/50 transition-all">
-              <Search className="w-4 h-4 text-muted-foreground/70 shrink-0" />
+            <div className="flex items-center px-3.5 py-2.5 gap-3 rounded-xl border border-border bg-muted/40 focus-within:border-primary/50 transition-all">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search skills or categories..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 border-0 focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 shadow-none font-medium p-0 !outline-none !ring-0 !border-none"
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 shadow-none font-medium p-0 !outline-none !ring-0 !border-none"
                 autoFocus
               />
               {globalSearch && (
                 <button
                   type="button"
                   onClick={() => setGlobalSearch('')}
-                  className="p-1 rounded-md hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -443,12 +453,12 @@ ${parsed.body}`;
             {/* Results List */}
             <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
               {!globalSearch.trim() ? (
-                <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground/60">
-                  <Sparkles className="w-6 h-6 text-primary/70 animate-pulse" />
+                <div className="py-10 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Sparkles className="w-6 h-6 text-primary animate-pulse" />
                   <p className="text-xs font-medium">Type a skill name or category (e.g. "frontend", "branding", "firebase")...</p>
                 </div>
               ) : globalSearchResults.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground/60">
+                <div className="py-12 text-center text-xs text-muted-foreground">
                   No skills found matching "{globalSearch}"
                 </div>
               ) : (
@@ -467,8 +477,8 @@ ${parsed.body}`;
                       onClick={() => handleSelectSkillFromSearch(s)}
                       className={`w-full p-3.5 rounded-xl border text-left flex items-center justify-between transition-all select-none group ${
                         isSelected
-                          ? 'bg-primary/20 border-primary/40 text-foreground shadow-md'
-                          : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.08] hover:border-white/10 text-foreground'
+                          ? 'bg-primary/15 border-primary/40 text-foreground shadow-sm'
+                          : 'bg-muted/30 border-border/40 hover:bg-muted/70 hover:border-border text-foreground'
                       }`}
                     >
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -479,13 +489,13 @@ ${parsed.body}`;
                           <span className="font-semibold text-sm text-foreground tracking-tight break-words group-hover:text-primary transition-colors">
                             {skillName}
                           </span>
-                          <span className="text-xs text-muted-foreground/70 font-mono flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
                             in <span className="text-muted-foreground font-sans">{categoryName}</span>
                           </span>
                         </div>
                       </div>
 
-                      <CornerDownLeft className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground transition-colors shrink-0 ml-3" />
+                      <CornerDownLeft className="w-4 h-4 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0 ml-3" />
                     </button>
                   );
                 })
@@ -606,13 +616,13 @@ ${parsed.body}`;
 
           <BorderGlow
             edgeSensitivity={30}
-            glowColor="240 5 75"
+            glowColor="142 71 36"
             backgroundColor="hsl(var(--card))"
             borderRadius={12}
             glowRadius={40}
             glowIntensity={1.0}
             coneSpread={25}
-            colors={['#ffffff', '#cbd5e1', '#64748b']}
+            colors={['#15803d', '#16a34a', '#22c55e']}
             fillOpacity={0.0}
           >
             <Card className="bg-transparent border-0 shadow-none w-full h-full">
@@ -760,13 +770,13 @@ ${parsed.body}`;
           <BorderGlow
             className="flex flex-col shrink-0"
             edgeSensitivity={30}
-            glowColor="240 5 75"
+            glowColor="142 71 36"
             backgroundColor="hsl(var(--card))"
             borderRadius={12}
             glowRadius={40}
             glowIntensity={1.0}
             coneSpread={25}
-            colors={['#ffffff', '#cbd5e1', '#64748b']}
+            colors={['#15803d', '#16a34a', '#22c55e']}
             fillOpacity={0.0}
           >
             <Card className="bg-transparent border-0 shadow-none flex flex-col w-full">
@@ -838,13 +848,13 @@ ${parsed.body}`;
         <BorderGlow
           className="lg:col-span-7 xl:col-span-8 flex flex-col min-h-[600px] shadow-sm backdrop-blur-sm"
           edgeSensitivity={30}
-          glowColor="240 5 75"
+          glowColor="142 71 36"
           backgroundColor="hsl(var(--card) / 0.5)"
           borderRadius={12}
           glowRadius={60}
           glowIntensity={1.2}
           coneSpread={30}
-          colors={['#ffffff', '#cbd5e1', '#64748b']}
+          colors={['#15803d', '#16a34a', '#22c55e']}
           fillOpacity={0.0}
         >
           <Card className="dark:bg-black border-0 shadow-none flex-1 flex flex-col w-full h-full">
@@ -880,8 +890,23 @@ ${parsed.body}`;
                     </>
                   )}
                 </Button>
-                <Button variant="default" size="sm" onClick={handleDownload} disabled={!state.generatedContent} className="h-8 gap-2">
-                  <Download className="w-3.5 h-3.5" /> Download
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleDownload} 
+                  disabled={!state.generatedContent || isDownloadingSingle} 
+                  className="h-8 gap-2 transition-all font-semibold"
+                >
+                  {isDownloadingSingle ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Zipping...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" /> Download
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

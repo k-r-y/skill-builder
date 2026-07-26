@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { batchDownload } from '../lib/cart';
+import { batchDownload, downloadSingleSkill } from '../lib/cart';
 
 const STATUS_CONFIG = {
   pending:    { label: 'pending',    className: 'status-pending' },
@@ -29,11 +29,26 @@ function StatusIcon({ status }) {
 
 function CartItemRow({ item, onPreview, onEdit, onDelete, isRunning }) {
   const [exiting, setExiting] = useState(false);
+  const [isItemDownloading, setIsItemDownloading] = useState(false);
 
   const handleDelete = () => {
     setExiting(true);
     setTimeout(() => onDelete(item.cartId), 220);
   };
+
+  const handleItemDownload = async () => {
+    if (isItemDownloading || !item.generatedContent) return;
+    setIsItemDownloading(true);
+    try {
+      await downloadSingleSkill(item.skill, item.generatedContent);
+    } catch (err) {
+      console.error('Single item download failed:', err);
+    } finally {
+      setIsItemDownloading(false);
+    }
+  };
+
+  const displayName = item.skill?.metadata?.name || item.skill?.name || item.skill?.id || 'Skill';
 
   return (
     <div className={`cart-item ${exiting ? 'cart-item-exit' : 'cart-item-enter'} border-l-2 ${
@@ -45,14 +60,14 @@ function CartItemRow({ item, onPreview, onEdit, onDelete, isRunning }) {
       <div className="flex items-center gap-3 min-w-0">
         <StatusIcon status={item.status} />
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-medium text-foreground truncate">{item.skill.name}</span>
+          <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs text-muted-foreground truncate">{item.categoryName}</span>
             {item.errorMessage && item.status === 'done' && (
-              <span className="text-[10px] text-amber-400/70 italic">· offline fallback</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 italic">· offline fallback</span>
             )}
             {item.status === 'error' && item.errorMessage && (
-              <span className="text-[10px] text-destructive/80 italic truncate">· {item.errorMessage}</span>
+              <span className="text-[10px] text-destructive italic truncate">· {item.errorMessage}</span>
             )}
           </div>
         </div>
@@ -60,6 +75,20 @@ function CartItemRow({ item, onPreview, onEdit, onDelete, isRunning }) {
 
       <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end border-t border-border/10 pt-2 sm:border-t-0 sm:pt-0 ml-auto">
         <StatusPill status={item.status} />
+        {item.status === 'done' && item.generatedContent && (
+          <button
+            title="Download skill ZIP"
+            onClick={handleItemDownload}
+            disabled={isItemDownloading}
+            className="cart-action-btn hover:text-primary transition-colors"
+          >
+            {isItemDownloading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+          </button>
+        )}
         <button
           title="Preview"
           onClick={() => onPreview(item)}
@@ -97,9 +126,22 @@ export default function CartPanel({
   onGenerateAll,
   onClearDone,
 }) {
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const doneCount    = cart.filter(i => i.status === 'done').length;
   const pendingCount = cart.filter(i => i.status === 'pending').length;
   const totalCount   = cart.length;
+
+  const handleBatchDownload = async () => {
+    if (isBatchDownloading) return;
+    setIsBatchDownloading(true);
+    try {
+      await batchDownload(cart);
+    } catch (err) {
+      console.error('Batch download failed:', err);
+    } finally {
+      setIsBatchDownloading(false);
+    }
+  };
 
   if (totalCount === 0) {
     return (
@@ -121,7 +163,7 @@ export default function CartPanel({
           <Package className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">{totalCount} skill{totalCount !== 1 ? 's' : ''}</span>
           {doneCount > 0 && (
-            <span className="text-xs text-emerald-400/80">· {doneCount} ready</span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">· {doneCount} ready</span>
           )}
           {pendingCount > 0 && (
             <span className="text-xs text-muted-foreground/60">· {pendingCount} pending</span>
@@ -132,11 +174,21 @@ export default function CartPanel({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs"
-              onClick={() => batchDownload(cart)}
+              className="h-8 gap-1.5 text-xs font-semibold transition-all"
+              disabled={isBatchDownloading}
+              onClick={handleBatchDownload}
             >
-              <Download className="w-3.5 h-3.5" />
-              Download ZIP
+              {isBatchDownloading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                  Packaging ZIP...
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  Download ZIP
+                </>
+              )}
             </Button>
           )}
           {pendingCount > 0 && (

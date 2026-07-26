@@ -17,6 +17,8 @@ export default function EditItemModal({ item, onSave, onClose }) {
     onClose();
   };
 
+  const displayName = item.skill?.metadata?.name || item.skill?.name || item.skill?.id || 'Skill';
+
   return (
     <div
       className="modal-overlay"
@@ -27,7 +29,7 @@ export default function EditItemModal({ item, onSave, onClose }) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
           <div>
             <h2 className="text-base font-semibold text-foreground">Edit Constraints</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{item.skill.name} · {item.categoryName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{displayName} · {item.categoryName}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
             <X className="w-4 h-4" />
@@ -37,7 +39,7 @@ export default function EditItemModal({ item, onSave, onClose }) {
         {/* Body */}
         <div className="p-6 flex flex-col gap-4">
           {wasGenerated && isDirty && (
-            <div className="flex items-start gap-2 text-xs text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-md p-3">
+            <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md p-3">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               <span>This skill was already generated. Saving changes will mark it as pending — regenerate to update the output.</span>
             </div>

@@ -9,8 +9,15 @@
 ## 2. Color Palette
 * **Background:** `#09090B` (Zinc 950)
 * **Card/Surface:** `#18181B` (Zinc 900) with `#27272A` (Zinc 800) subtle borders.
-* **Primary Brand/Accent:** `#2563EB` (Royal Blue 600) / `#3B82F6` (Blue 500)
+* **Primary Brand/Accent:** `#15803d` (Green 700) / `#16a34a` (Green 600) / `#22c55e` (Green 500)
 * **Text:** `#FAFAFA` (Zinc 50 - Primary text), `#A1A1AA` (Zinc 400 - Secondary labels)
+
+* **Light Color:** `#faf9f5` Light backgrounds and text on dark
+* **Dark Color:** `#141413` Primary text and dark backgrounds
+* **Mid Gray: :** `#b0aea5` Secondary elements
+* **Light Gray:** `#e8e6dc` Subtle backgrounds
+
+* **Accent Color:** `#15803d` for accent, emphasizes, etc.
 * **Theme:** Light and Dark mode
 
 ## 3. Typography
@@ -22,3 +29,4 @@
 * **Textarea:** Glassmorphic text input for extra context/notes.
 * **Tabs:** To toggle between "Rendered Preview", "Edit Code", and "How to Use".
 * **Button:** Accent-colored generation button with loading state spinner.
+
