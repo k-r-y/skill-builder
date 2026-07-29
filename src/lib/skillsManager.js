@@ -4,7 +4,8 @@ import fallbacks from './fallbacks.json';
 const REPOS_TO_SCAN = [
   { owner: 'anthropics', repo: 'skills', branch: 'main' },
   { owner: 'LambdaTest', repo: 'agent-skills', branch: 'main' },
-  { owner: 'VoltAgent', repo: 'awesome-agent-skills', branch: 'main' }
+  { owner: 'VoltAgent', repo: 'awesome-agent-skills', branch: 'main' },
+  { owner: 'emilkowalski', repo: 'skill', branch: 'main' }
 ];
 const COMMUNITY_SKILLS_TO_SEED = [
   // Anthropic Skills
@@ -97,6 +98,15 @@ export const CATEGORY_MAP = {
   'slack-gif-creator': 'UI/UX, Web Design & Visual Identity',
   'responsive-layouts': 'UI/UX, Web Design & Visual Identity',
   'web-artifacts-builder': 'UI/UX, Web Design & Visual Identity',
+  'animation-vocabulary': 'UI/UX, Web Design & Visual Identity',
+  'apple-design': 'UI/UX, Web Design & Visual Identity',
+  'emil-design-eng': 'UI/UX, Web Design & Visual Identity',
+  'find-animation-opportunities': 'UI/UX, Web Design & Visual Identity',
+  'improve-animations': 'UI/UX, Web Design & Visual Identity',
+  'pick-ui-library': 'UI/UX, Web Design & Visual Identity',
+  'prototype': 'UI/UX, Web Design & Visual Identity',
+  'review-animations': 'UI/UX, Web Design & Visual Identity',
+
 
   // 3. Full-Stack Infrastructure & Deployment
   'firebase-auth-basics': 'Full-Stack Infrastructure & Deployment',

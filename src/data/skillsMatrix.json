@@ -2479,6 +2479,166 @@
         "prompt-engineering",
         "ai-agent-orchestration"
       ]
+    },
+    {
+      "id": "animation-vocabulary",
+      "categoryId": "ui-ux-design",
+      "name": "animation-vocabulary",
+      "howItWorks": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" → Pop in; \"the iOS rubber-band scroll\" → Rubber-banding). Use when the user asks \"what's it called when…\", or describes a motion effect without knowing its name and wants the right word to prompt an AI or designer with. For naming an effect, not designing or building one.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying animation-vocabulary principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "apple-design",
+      "categoryId": "ui-ux-design",
+      "name": "apple-design",
+      "howItWorks": "Apple's approach to interface design and fluid, physical motion, translated for the web. Use when building or reviewing gesture-driven UI, spring animations, drag/swipe/sheet interactions, momentum and interruptible transitions, translucent materials and depth, typography (optical sizing, tracking, leading), reduced-motion, or the design foundations (feedback, spatial consistency, restraint) behind Apple-style interfaces.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying apple-design principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "emil-design-eng",
+      "categoryId": "ui-ux-design",
+      "name": "emil-design-eng",
+      "howItWorks": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying emil-design-eng principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "find-animation-opportunities",
+      "categoryId": "ui-ux-design",
+      "name": "find-animation-opportunities",
+      "howItWorks": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it does not implement it. Use when the user asks \"what could be animated here?\" or wants to \"make this feel more alive\". For fixing existing animations, use improve-animations or review-animations instead.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying find-animation-opportunities principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "improve-animations",
+      "categoryId": "ui-ux-design",
+      "name": "improve-animations",
+      "howItWorks": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other agents (or cheaper models) to execute. Read-only on source code — it plans improvements, it does not apply them. Use when the user asks to \"improve the animations\", \"audit the motion\", \"make this app feel better\", or wants a roadmap of animation fixes rather than a review of a single diff.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying improve-animations principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "pick-ui-library",
+      "categoryId": "ui-ux-design",
+      "name": "pick-ui-library",
+      "howItWorks": "Pick the right library for a given frontend task from a curated, opinionated list — numbers, OTP inputs, charts, command menus, virtualization, drag and drop, toasts, state, styling, and more. Only runs when explicitly invoked; it does not trigger on its own.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying pick-ui-library principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "prototype",
+      "categoryId": "ui-ux-design",
+      "name": "prototype",
+      "howItWorks": "Build multiple genuinely different versions of a UI piece you describe, rendered behind a visual picker so you can flip through them live and promote the one that feels right. Only runs when explicitly invoked; it does not trigger on its own.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying prototype principles to the project.",
+      "relatedSkills": []
+    },
+    {
+      "id": "review-animations",
+      "categoryId": "ui-ux-design",
+      "name": "review-animations",
+      "howItWorks": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+      "whyItMatters": "Elevates the overall feel and polish of the application.",
+      "persona": "You are a Design Engineer focused on craft and polish.",
+      "directives": [
+        "Follow Emil Kowalski's animation principles.",
+        "Ensure animations feel natural and responsive.",
+        "Prioritize user experience over visual flair."
+      ],
+      "antiPatterns": [
+        "Do not over-animate frequent interactions.",
+        "Do not use linear easings for UI state changes.",
+        "Do not sacrifice performance for aesthetics."
+      ],
+      "trigger": "Use when applying review-animations principles to the project.",
+      "relatedSkills": []
     }
   ]
 }
